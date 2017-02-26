@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
-import sys
+import sys     # exit
 import grovepi
 import grove_i2c_motor_driver
-import itg3200
-import time
+import itg3200 # library for grove gyroscope
+import time    # sleep
 
 # update with your bus number and address
 gyro = itg3200.SensorITG3200(1, 0x68)
@@ -17,22 +17,26 @@ directions = [0, 0, 0, 0]
 speeds = [100, 100, 100, 100]
 speedLimit = 100
 
+# initalize motors and return two motor pairs, 02 and 13
 def initMotors():
     motors02 = grove_i2c_motor_driver.motor_driver(address=0x0f)
     motors13 = grove_i2c_motor_driver.motor_driver(address=0x0a)
     return motors02, motors13
 
+# set the directions of the motors
 def setDirections((motors02, motors13), directions):
     directions02 = (directions[0]+1) * 4 + (directions[2]+1)
     directions13 = (directions[1]+1) * 4 + (directions[3]+1)
     motors02.MotorDirectionSet(directions02)
     motors13.MotorDirectionSet(directions13)
 
+# set the speeds of the motors with the speedLimit as the fastest speed allowed
 def setSpeeds((motors02, motors13), speeds, speedLimit):
     limitSpeeds(speeds, speedLimit)
     motors02.MotorSpeedSetAB(speeds[2], speeds[0])    #defines the speed of motor 0 and motor 2
     motors13.MotorSpeedSetAB(speeds[3], speeds[1])    #defines the speed of motor 1 and motor 3
 
+# change the fastest speed to speedLimit and scale other speeds proportionally
 def limitSpeeds(speeds, speedLimit):
     speedLimit += 0.0
     maxSpeed = max(speeds)
@@ -43,10 +47,12 @@ def limitSpeeds(speeds, speedLimit):
             else:
                 speeds[i] *= speedLimit/maxSpeed
 
+# get the distances from each ultrasonic ranger
 def getDistances(ultrasonic_rangers, distances):
     for i in range(len(ultrasonic_rangers)):
         distances[i] = grovepi.ultrasonicRead(ultrasonic_rangers[i])
 
+# get rotation from gyroscope
 def getRotation():
     # storing the z-axis gyro value
     return gyro.read_data()[2]+40
@@ -133,9 +139,9 @@ try:
             print("distances", distances)
 
         except TypeError:
-            print ("Error")
+            print ("TypeError")
         except IOError:
-            print ("Error")
+            print ("IOError")
 except KeyboardInterrupt: # stop motors before exit
     stop(motors)
     sys.exit()
