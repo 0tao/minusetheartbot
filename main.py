@@ -19,6 +19,7 @@ lr_s = [100, 100]
 fb_s = [100, 100]
 # 0 denote clockwise, 1 denote counter-clockwise
 directions = [0, 0, 0, 0]
+speeds = [100, 100, 100, 100]
 
 def setDirections((motors02, motors13), directions):
     
@@ -26,6 +27,10 @@ def setDirections((motors02, motors13), directions):
     directions13 = (directions[1]+1) * 4 + (directions[3]+1)
     motors02.MotorDirectionSet(directions02)
     motors13.MotorDirectionSet(directions13)
+
+def setSpeeds((motors02, motors13), speeds):
+    motors02.MotorSpeedSetAB(speeds[2], speeds[0])    #defines the speed of motor 1 and motor 2;
+    motors13.MotorSpeedSetAB(speeds[3], speeds[1])    #defines the speed of motor 1 and motor 2;
     
 # normalize the speed by setting the faster wheel to ms
 # and scale the other wheel speed accordingly
@@ -92,9 +97,11 @@ try:
     try:
         motors02 = grove_i2c_motor_driver.motor_driver(address=0x0f)
         motors13 = grove_i2c_motor_driver.motor_driver(address=0x0a)
+        motors = (motors02, motors13)
         motors02.MotorSpeedSetAB(100,100)
         motors13.MotorSpeedSetAB(100,100)
-        setDirections((motors02, motors13), directions)
+        setDirections(motors, directions)
+        setSpeeds(motors, speeds)
             
     except IOError:
         print("Unable to find the motor driver, check the addrees and press reset on the motor driver and try again")
