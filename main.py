@@ -6,21 +6,21 @@ import grove_i2c_motor_driver
 import itg3200
 import time
 
-# pin numbers for ultrasonic rangers
-us_ranger_f = 8
-us_ranger_b = 2
-us_ranger_l = 7
-us_ranger_r = 3
 # update with your bus number and address
 gyro = itg3200.SensorITG3200(1, 0x68)
 gyro.default_init()
-# lists storing speeds
-lr_s = [100, 100]
-fb_s = [100, 100]
+# pin numbers for ultrasonic rangers # note D14 corresponds to A0
+ultrasonic_rangers = (8, 4, 3, 14, 2, 5, 7, 6)
+distances = [0] * 8
 # 0 denote clockwise, 1 denote counter-clockwise
 directions = [0, 0, 0, 0]
-speeds = [50, 100, 100, 100]
-speedLimit = 50
+speeds = [100, 100, 100, 100]
+speedLimit = 100
+
+def initMotors():
+    motors02 = grove_i2c_motor_driver.motor_driver(address=0x0f)
+    motors13 = grove_i2c_motor_driver.motor_driver(address=0x0a)
+    return motors02, motors13
 
 def setDirections((motors02, motors13), directions):
     directions02 = (directions[0]+1) * 4 + (directions[2]+1)
@@ -42,7 +42,15 @@ def limitSpeeds(speeds, speedLimit):
                 speeds[i] = speedLimit
             else:
                 speeds[i] *= speedLimit/maxSpeed
-            
+
+def getDistances(ultrasonic_rangers, distances):
+    for i in range(len(ultrasonic_rangers)):
+        distances[i] = grovepi.ultrasonicRead(ultrasonic_rangers[i])
+
+def getRotation():
+    # storing the z-axis gyro value
+    return gyro.read_data()[2]+40
+#
 # normalize the speed by setting the faster wheel to ms
 # and scale the other wheel speed accordingly
 def normalize_s(xx_s, ms):
@@ -106,14 +114,10 @@ def stop(motors):
 
 try:
     try:
-        motors02 = grove_i2c_motor_driver.motor_driver(address=0x0f)
-        motors13 = grove_i2c_motor_driver.motor_driver(address=0x0a)
-        motors = (motors02, motors13)
-        motors02.MotorSpeedSetAB(100,100)
-        motors13.MotorSpeedSetAB(100,100)
-        setDirections(motors, directions)
+        motors = initMotors()
+        #setDirections(motors, directions)
         print(directions)
-        setSpeeds(motors, speeds, speedLimit)
+        #setSpeeds(motors, speeds, speedLimit)
         print(speeds)
             
     except IOError:
@@ -121,17 +125,12 @@ try:
         
     while True:
         try:
-            time.sleep(0.1)
-            # storing the z-axis gyro value
-            gz = gyro.read_data()[2]+40
-            print gz
+            time.sleep(0.01)
+            rotation = getRotation()
+            print("rotation", rotation)
             # Read distance value from Ultrasonic
-            dist_f = grovepi.ultrasonicRead(us_ranger_f)
-            dist_b = grovepi.ultrasonicRead(us_ranger_b)
-            dist_l = grovepi.ultrasonicRead(us_ranger_l)
-            dist_r = grovepi.ultrasonicRead(us_ranger_r)
-            print(dist_f, dist_r, dist_b, dist_l)
-
+            getDistances(ultrasonic_rangers, distances)
+            print("distances", distances)
 
         except TypeError:
             print ("Error")
