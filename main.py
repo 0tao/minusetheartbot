@@ -17,7 +17,16 @@ gyro.default_init()
 # lists storing speeds
 lr_s = [100, 100]
 fb_s = [100, 100]
+# 0 denote clockwise, 1 denote counter-clockwise
+directions = [0, 0, 0, 0]
 
+def setDirections((motors02, motors13), directions):
+    
+    directions02 = (directions[0]+1) * 4 + (directions[2]+1)
+    directions13 = (directions[1]+1) * 4 + (directions[3]+1)
+    motors02.MotorDirectionSet(directions02)
+    motors13.MotorDirectionSet(directions13)
+    
 # normalize the speed by setting the faster wheel to ms
 # and scale the other wheel speed accordingly
 def normalize_s(xx_s, ms):
@@ -81,8 +90,11 @@ def stop(mxx):
 
 try:
     try:
-        mfb = grove_i2c_motor_driver.motor_driver(address=0x0f)
-        mlr = grove_i2c_motor_driver.motor_driver(address=0x0a)
+        motors02 = grove_i2c_motor_driver.motor_driver(address=0x0f)
+        motors13 = grove_i2c_motor_driver.motor_driver(address=0x0a)
+        motors02.MotorSpeedSetAB(100,100)
+        motors13.MotorSpeedSetAB(100,100)
+        setDirections((motors02, motors13), directions)
             
     except IOError:
         print("Unable to find the motor driver, check the addrees and press reset on the motor driver and try again")
@@ -100,21 +112,12 @@ try:
             dist_r = grovepi.ultrasonicRead(us_ranger_r)
             print(dist_f, dist_r, dist_b, dist_l)
 
-            if (dist_f > 100):
-                forward(mlr, lr_s, gz)
-            elif (dist_f < 95):
-                backward(mlr, lr_s, gz)
-
-            if (dist_l > 100):
-                forward(mfb, fb_s, gz)
-            elif (dist_l < 95):
-                backward(mfb, fb_s, gz)
 
         except TypeError:
             print ("Error")
         except IOError:
             print ("Error")
 except KeyboardInterrupt: # stop motors before exit
-    stop(mlr)
-    stop(mfb)
+    stop(motors02)
+    stop(motors13)
     sys.exit()
