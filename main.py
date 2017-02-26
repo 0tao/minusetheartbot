@@ -19,19 +19,30 @@ lr_s = [100, 100]
 fb_s = [100, 100]
 # 0 denote clockwise, 1 denote counter-clockwise
 directions = [0, 0, 0, 0]
-speeds = [100, 100, 100, 100]
+speeds = [50, 100, 100, 100]
+speedLimit = 50
 
 def setDirections((motors02, motors13), directions):
-    
     directions02 = (directions[0]+1) * 4 + (directions[2]+1)
     directions13 = (directions[1]+1) * 4 + (directions[3]+1)
     motors02.MotorDirectionSet(directions02)
     motors13.MotorDirectionSet(directions13)
 
-def setSpeeds((motors02, motors13), speeds):
-    motors02.MotorSpeedSetAB(speeds[2], speeds[0])    #defines the speed of motor 1 and motor 2;
-    motors13.MotorSpeedSetAB(speeds[3], speeds[1])    #defines the speed of motor 1 and motor 2;
-    
+def setSpeeds((motors02, motors13), speeds, speedLimit):
+    limitSpeeds(speeds, speedLimit)
+    motors02.MotorSpeedSetAB(speeds[2], speeds[0])    #defines the speed of motor 0 and motor 2
+    motors13.MotorSpeedSetAB(speeds[3], speeds[1])    #defines the speed of motor 1 and motor 3
+
+def limitSpeeds(speeds, speedLimit):
+    speedLimit += 0.0
+    maxSpeed = max(speeds)
+    if maxSpeed > 0:
+        for i in range(4):
+            if speeds[i] == maxSpeed:
+                speeds[i] = speedLimit
+            else:
+                speeds[i] *= speedLimit/maxSpeed
+            
 # normalize the speed by setting the faster wheel to ms
 # and scale the other wheel speed accordingly
 def normalize_s(xx_s, ms):
@@ -87,10 +98,10 @@ def rightward(mfb, fb_s, gz):
     print("RIGHTWARD")
     backward(mfb, fb_s, gz)
 
-def stop(mxx):
+def stop(motors):
     #STOP
     print("Stop")
-    mxx.MotorSpeedSetAB(0,0)
+    setSpeeds(motors, [0,0,0,0], 0);
     time.sleep(1)
 
 try:
@@ -101,7 +112,9 @@ try:
         motors02.MotorSpeedSetAB(100,100)
         motors13.MotorSpeedSetAB(100,100)
         setDirections(motors, directions)
-        setSpeeds(motors, speeds)
+        print(directions)
+        setSpeeds(motors, speeds, speedLimit)
+        print(speeds)
             
     except IOError:
         print("Unable to find the motor driver, check the addrees and press reset on the motor driver and try again")
@@ -125,6 +138,5 @@ try:
         except IOError:
             print ("Error")
 except KeyboardInterrupt: # stop motors before exit
-    stop(motors02)
-    stop(motors13)
+    stop(motors)
     sys.exit()
