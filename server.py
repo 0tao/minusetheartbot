@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from socket import * # socket
 import sys     # exit
 import grovepi
 import grove_i2c_motor_driver
@@ -17,6 +18,13 @@ directions = [1, 0, 1, 1]
 speeds = [1, 100, 1, 100]
 speedLimit = 100
 s = [100, 100]
+
+# socket init
+serverPort = 12000
+serverSocket = socket(AF_INET,SOCK_STREAM)
+serverSocket.bind(('',serverPort))
+serverSocket.listen(1)
+print 'The server is running'
 
 # initalize motors and return two motor pairs, 02 and 13
 def initMotors():
@@ -130,22 +138,51 @@ try:
         try:
             time.sleep(0.01)
             rotation = getRotation()
-            print("rotation", rotation)
-            # Read distance value from Ultrasonic
-            getDistances(ultrasonic_rangers, distances)
-            print("distances", distances)
-
+            #print("rotation", rotation)
             #forward(motors[1], s, rotation)
 
-            setDirections(motors, directions)
-            print(directions)
-            setSpeeds(motors, speeds, speedLimit)
-            print(speeds)
+            while 1:
+                connectionSocket, addr = serverSocket.accept()
+                x = 0
+                while x != chr(27):
+                    x = connectionSocket.recv(1024)
+                    print "Client:", x
+                    if (x=='w'):    # forward
+                        directions = [0, 0, 0, 1]
+                        speeds = [0, 100, 0, 100]
+                        speedLimit = 100
+                    elif (x=='s'):  # backward
+                        directions = [0, 1, 0, 0]
+                        speeds = [0, 100, 0, 100]
+                        speedLimit = 100
+                    elif (x=='a'):  # turn left
+                        directions = [0, 0, 0, 0]
+                        speeds = [100, 100, 100, 100]
+                        speedLimit = 10
+                    elif (x=='d'):  # turn right
+                        directions = [1, 1, 1, 1]
+                        speeds = [100, 100, 100, 100]
+                        speedLimit = 10
+                    elif (x==' '):  # stop
+                        speedLimit = 0
+
+                    # Read distance value from Ultrasonic
+                    #getDistances(ultrasonic_rangers, distances)
+                    #print("distances", distances)
+
+                    setDirections(motors, directions)
+                    print(directions)
+                    setSpeeds(motors, speeds, speedLimit)
+                    print(speeds)
+                    connectionSocket.send("OK")
+                connectionSocket.close()
+                stop(motors)
 
         except TypeError:
             print ("TypeError")
         except IOError:
             print ("IOError")
 except KeyboardInterrupt: # stop motors before exit
+    connectionSocket.close()
     stop(motors)
     sys.exit()
