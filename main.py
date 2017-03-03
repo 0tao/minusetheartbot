@@ -5,6 +5,13 @@ import grovepi # grovepi
 import grove_i2c_motor_driver
 import itg3200 # library for grove gyroscope
 import time    # sleep
+import grove_oled
+
+# initialize oled
+grove_oled.oled_init()
+grove_oled.oled_clearDisplay()
+grove_oled.oled_setNormalDisplay()
+grove_oled.oled_setVerticalMode()
 
 # update with your bus number and address
 gyro = itg3200.SensorITG3200(1, 0x68)
@@ -77,6 +84,14 @@ def explore(distances, velocities):
                 velocities[(i/2+4)%4] -= (distances[i]-300)/10
             break
 
+def correctRotation(rotation, velocities):
+    if rotation < 0: 
+        for i in range(len(velocities)):
+            velocities[i] += (0-rotation)/10
+    elif rotation > 10:
+        for i in range(len(velocities)):
+            velocities[i] -= (rotation-10)/10
+
 # stop motors
 def stop(motors):
     #STOP
@@ -95,14 +110,25 @@ try:
         try:
             time.sleep(0.01)
             rotation = getRotation()
-            print("rotation", rotation)
+            #print("rotation", rotation)
+            correctRotation(rotation, velocities)
             # Read distance value from Ultrasonic
             getDistances(ultrasonic_rangers, distances)
-            print("distances", distances)
+            #print("distances", distances)
             explore(distances, velocities)
             avoidObstacles(distances, velocities)
             setVelocities(motors, velocities, speedLimit)
-            print(velocities)
+            #print(velocities)
+
+            #display, note this may slow the robot reaction down
+            grove_oled.oled_setTextXY(11,0)
+            grove_oled.oled_putString("ROT:"+str(int(rotation)))
+            for i in range (len(distances)):
+                grove_oled.oled_setTextXY(i,0)
+                grove_oled.oled_putString(str(i)+":"+str(distances[i]).zfill(3))
+            for i in range(len(velocities)):
+                grove_oled.oled_setTextXY(i,6)
+                grove_oled.oled_putString(str(i)+":"+str(int(velocities[i])))
 
         except TypeError:
             print ("TypeError")
