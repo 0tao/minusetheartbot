@@ -147,19 +147,19 @@ try:
                 while x != chr(27):
                     x = connectionSocket.recv(1024)
                     print "Client:", x
-                    if (x=='w'):    # forward
+                    if (x=='w' or x=='k'):    # forward
                         directions = [0, 0, 0, 1]
                         speeds = [0, 100, 0, 100]
                         speedLimit = 100
-                    elif (x=='s'):  # backward
+                    elif (x=='s' or x=='j'):  # backward
                         directions = [0, 1, 0, 0]
                         speeds = [0, 100, 0, 100]
                         speedLimit = 100
-                    elif (x=='a'):  # turn left
+                    elif (x=='a' or x=='h'):  # turn left
                         directions = [0, 0, 0, 0]
                         speeds = [100, 100, 100, 100]
                         speedLimit = 10
-                    elif (x=='d'):  # turn right
+                    elif (x=='d' or x=='l'):  # turn right
                         directions = [1, 1, 1, 1]
                         speeds = [100, 100, 100, 100]
                         speedLimit = 10
