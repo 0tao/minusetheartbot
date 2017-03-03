@@ -7,11 +7,16 @@ import itg3200 # library for grove gyroscope
 import time    # sleep
 import grove_oled
 
-# initialize oled
-grove_oled.oled_init()
-grove_oled.oled_clearDisplay()
-grove_oled.oled_setNormalDisplay()
-grove_oled.oled_setVerticalMode()
+OLED = False
+CONSOLE = True
+loopCount = 0
+
+if OLED:
+    # initialize oled
+    grove_oled.oled_init()
+    grove_oled.oled_clearDisplay()
+    grove_oled.oled_setNormalDisplay()
+    grove_oled.oled_setVerticalMode()
 
 # update with your bus number and address
 gyro = itg3200.SensorITG3200(1, 0x68)
@@ -26,6 +31,8 @@ s = [100, 100]
 
 # initalize motors and return two motor pairs, 02 and 13
 def initMotors():
+    if CONSOLE:
+        print("initializeing motors")
     # motor driver addresses accordingly
     motors02 = grove_i2c_motor_driver.motor_driver(address=0x0f)
     motors13 = grove_i2c_motor_driver.motor_driver(address=0x0a)
@@ -33,6 +40,8 @@ def initMotors():
 
 # set the velocities of the motors with the speedLimit as the fastest speed allowed
 def setVelocities((motors02, motors13), velocities, speedLimit):
+    if CONSOLE:
+        print("setting velocities")
     # get directions from the velocities
     directions02 = (1 if velocities[0] >= 0 else 2) * 4 + (1 if velocities[2] >= 0 else 2)
     directions13 = (1 if velocities[1] >= 0 else 2) * 4 + (1 if velocities[3] >= 0 else 2)
@@ -46,6 +55,8 @@ def setVelocities((motors02, motors13), velocities, speedLimit):
 
 # change the fastest speed to speedLimit and scale other speeds proportionally
 def limitSpeeds(velocities, speedLimit):
+    if CONSOLE:
+        print("converting speed")
     speedLimit += 0.0
     maxSpeed = max(abs(max(velocities)), abs(min(velocities)))
     if maxSpeed > 0:
@@ -54,6 +65,8 @@ def limitSpeeds(velocities, speedLimit):
 
 # get the distances from each ultrasonic ranger
 def getDistances(ultrasonic_rangers, distances):
+    if CONSOLE:
+        print("reading ultrasonic rangers")
     for i in range(len(ultrasonic_rangers)):
         distances[i] = grovepi.ultrasonicRead(ultrasonic_rangers[i])
 
@@ -63,6 +76,8 @@ def getRotation():
     return gyro.read_data()[2]+40
 # avoid getting hit
 def avoidObstacles(distances, velocities):
+    if CONSOLE:
+        print("handling obstacles")
     reactDistance = 100
     for i in range(len(distances)):
         if distances[i] < reactDistance:
@@ -74,6 +89,8 @@ def avoidObstacles(distances, velocities):
                 velocities[(i/2+4)%4] += reactDistance-distances[i]
 
 def explore(distances, velocities):
+    if CONSOLE:
+        print("exploring")
     for i in range(len(distances)):
         if distances[i] > 300:
             velocities[(i/2+1)%4] += (distances[i]-300)/10
@@ -85,6 +102,8 @@ def explore(distances, velocities):
             break
 
 def correctRotation(rotation, velocities):
+    if CONSOLE:
+        print("correcting rotation")
     if rotation < 0: 
         for i in range(len(velocities)):
             velocities[i] += (0-rotation)/10
@@ -94,8 +113,9 @@ def correctRotation(rotation, velocities):
 
 # stop motors
 def stop(motors):
+    if CONSOLE:
+        print("stopping the motors")
     #STOP
-    print("Stop")
     setVelocities(motors, [0,0,0,0], 0);
     time.sleep(1)
 
@@ -110,25 +130,30 @@ try:
         try:
             time.sleep(0.01)
             rotation = getRotation()
-            #print("rotation", rotation)
             correctRotation(rotation, velocities)
             # Read distance value from Ultrasonic
             getDistances(ultrasonic_rangers, distances)
-            #print("distances", distances)
             explore(distances, velocities)
             avoidObstacles(distances, velocities)
             setVelocities(motors, velocities, speedLimit)
-            #print(velocities)
 
-            #display, note this may slow the robot reaction down
-            grove_oled.oled_setTextXY(11,0)
-            grove_oled.oled_putString("ROT:"+str(int(rotation)))
-            for i in range (len(distances)):
-                grove_oled.oled_setTextXY(i,0)
-                grove_oled.oled_putString(str(i)+":"+str(distances[i]).zfill(3))
-            for i in range(len(velocities)):
-                grove_oled.oled_setTextXY(i,6)
-                grove_oled.oled_putString(str(i)+":"+str(int(velocities[i])))
+            if CONSOLE:
+                print("-------------------- "+str(loopCount)+" --------------------")
+                print("R: " + str(rotation))
+                print("D: " + str(distances))
+                print("V: " + str([int(i) for i in velocities]))
+                loopCount += 1
+
+            if OLED:
+                #display, note this may slow the robot reaction down
+                grove_oled.oled_setTextXY(11,0)
+                grove_oled.oled_putString("ROT:"+str(int(rotation)))
+                for i in range (len(distances)):
+                    grove_oled.oled_setTextXY(i,0)
+                    grove_oled.oled_putString(str(i)+":"+str(distances[i]).zfill(3))
+                for i in range(len(velocities)):
+                    grove_oled.oled_setTextXY(i,6)
+                    grove_oled.oled_putString(str(i)+":"+str(int(velocities[i])).zfill(4))
 
         except TypeError:
             print ("TypeError")
