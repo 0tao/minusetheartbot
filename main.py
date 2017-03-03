@@ -1,11 +1,17 @@
 #!/usr/bin/env python
 import sys     # exit
+import time    # sleep
 import subprocess # for calling shell script
 import grovepi # grovepi
 import grove_i2c_motor_driver
-import itg3200 # library for grove gyroscope
-import time    # sleep
 import grove_oled
+import itg3200 # library for grove gyroscope
+
+__author__ = "Jack B. Du (Jiadong Du)"
+__email__ = "jackbdu@nyu.edu"
+__copyright__ = "Copyright 2017, Jack B. Du (Jiadong Du)"
+__license__ = "Apache-2.0"
+__status__ = "Development"
 
 OLED = False
 CONSOLE = True
