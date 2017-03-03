@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import sys     # exit
+import subprocess # for calling shell script
 import grovepi # grovepi
 import grove_i2c_motor_driver
 import itg3200 # library for grove gyroscope
@@ -53,6 +54,29 @@ def getDistances(ultrasonic_rangers, distances):
 def getRotation():
     # storing the z-axis gyro value
     return gyro.read_data()[2]+40
+# avoid getting hit
+def avoidObstacles(distances, velocities):
+    reactDistance = 100
+    for i in range(len(distances)):
+        if distances[i] < reactDistance:
+            velocities[(i/2+1)%4] -= reactDistance-distances[i]
+            velocities[(i/2+3)%4] += reactDistance-distances[i]
+            # if the ranger is between two motors
+            if i%2 == 1:
+                velocities[(i/2+2)%4] -= reactDistance-distances[i]
+                velocities[(i/2+4)%4] += reactDistance-distances[i]
+
+def explore(distances, velocities):
+    for i in range(len(distances)):
+        if distances[i] > 300:
+            velocities[(i/2+1)%4] += (distances[i]-300)/10
+            velocities[(i/2+3)%4] -= (distances[i]-300)/10
+            # if the ranger is between two motors
+            if i%2 == 1:
+                velocities[(i/2+2)%4] += (distances[i]-300)/10
+                velocities[(i/2+4)%4] -= (distances[i]-300)/10
+            break
+
 # stop motors
 def stop(motors):
     #STOP
@@ -75,11 +99,14 @@ try:
             # Read distance value from Ultrasonic
             getDistances(ultrasonic_rangers, distances)
             print("distances", distances)
+            explore(distances, velocities)
+            avoidObstacles(distances, velocities)
             setVelocities(motors, velocities, speedLimit)
             print(velocities)
 
         except TypeError:
             print ("TypeError")
+            subprocess.call(['./avrdude_test.sh'])
         except IOError:
             print ("IOError")
 except KeyboardInterrupt: # stop motors before exit
