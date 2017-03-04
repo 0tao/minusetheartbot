@@ -14,7 +14,7 @@ __license__ = "Apache-2.0"
 __status__ = "Development"
 
 OLED = False
-CONSOLE = True
+CONSOLE = False
 
 BUZZER_PIN = 15
 # pin numbers for ultrasonic rangers # note D14 corresponds to A0
@@ -118,10 +118,10 @@ def explore(distances, velocities):
 def correctRotation(rotation, velocities):
     if CONSOLE:
         print("correcting rotation")
-    if rotation < 0: 
+    if rotation < 0 && rotation > 40: 
         for i in range(len(velocities)):
             velocities[i] += (0-rotation)/10
-    elif rotation > 10:
+    elif rotation > 10 && rotation < 50:
         for i in range(len(velocities)):
             velocities[i] -= (rotation-10)/10
 
