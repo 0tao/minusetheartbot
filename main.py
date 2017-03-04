@@ -15,6 +15,14 @@ __status__ = "Development"
 
 OLED = False
 CONSOLE = True
+
+BUZZER_PIN = 15
+# pin numbers for ultrasonic rangers # note D14 corresponds to A0
+ULTRASONIC_RANGERS_PINS = (8, 4, 3, 14, 2, 5, 7, 6)
+GYRO_ADDR = 0x68
+MOTORS02_ADDR = 0x0f
+MOTORS13_ADDR = 0x0a
+
 loopCount = 0
 
 if OLED:
@@ -23,25 +31,25 @@ if OLED:
     grove_oled.oled_clearDisplay()
     grove_oled.oled_setNormalDisplay()
     grove_oled.oled_setVerticalMode()
+# initialize buzzer
+grovepi.pinMode(BUZZER_PIN,"OUTPUT")
 
 # update with your bus number and address
-gyro = itg3200.SensorITG3200(1, 0x68)
+gyro = itg3200.SensorITG3200(1, GYRO_ADDR)
 gyro.default_init()
-# pin numbers for ultrasonic rangers # note D14 corresponds to A0
-ultrasonic_rangers = (8, 4, 3, 14, 2, 5, 7, 6)
+
 distances = [0] * 8
 # + denote clockwise, - denote counter-clockwise
 velocities = [1, 1, 1, 1]
 speedLimit = 100
-s = [100, 100]
 
 # initalize motors and return two motor pairs, 02 and 13
 def initMotors():
     if CONSOLE:
         print("initializeing motors")
     # motor driver addresses accordingly
-    motors02 = grove_i2c_motor_driver.motor_driver(address=0x0f)
-    motors13 = grove_i2c_motor_driver.motor_driver(address=0x0a)
+    motors02 = grove_i2c_motor_driver.motor_driver(address=MOTORS02_ADDR)
+    motors13 = grove_i2c_motor_driver.motor_driver(address=MOTORS13_ADDR)
     return motors02, motors13
 
 # set the velocities of the motors with the speedLimit as the fastest speed allowed
@@ -70,11 +78,11 @@ def limitSpeeds(velocities, speedLimit):
             velocities[i] *= speedLimit/maxSpeed
 
 # get the distances from each ultrasonic ranger
-def getDistances(ultrasonic_rangers, distances):
+def getDistances(distances):
     if CONSOLE:
         print("reading ultrasonic rangers")
-    for i in range(len(ultrasonic_rangers)):
-        distances[i] = grovepi.ultrasonicRead(ultrasonic_rangers[i])
+    for i in range(len(ULTRASONIC_RANGERS_PINS)):
+        distances[i] = grovepi.ultrasonicRead(ULTRASONIC_RANGERS_PINS[i])
 
 # get rotation from gyroscope
 def getRotation():
@@ -138,7 +146,7 @@ try:
             rotation = getRotation()
             correctRotation(rotation, velocities)
             # Read distance value from Ultrasonic
-            getDistances(ultrasonic_rangers, distances)
+            getDistances(distances)
             explore(distances, velocities)
             avoidObstacles(distances, velocities)
             setVelocities(motors, velocities, speedLimit)
@@ -160,12 +168,16 @@ try:
                 for i in range(len(velocities)):
                     grove_oled.oled_setTextXY(i,6)
                     grove_oled.oled_putString(str(i)+":"+str(int(velocities[i])).zfill(4))
+            grovepi.digitalWrite(BUZZER_PIN,0)
 
         except TypeError:
             print ("TypeError")
+            grovepi.digitalWrite(BUZZER_PIN,1)
             subprocess.call(['./avrdude_test.sh'])
         except IOError:
             print ("IOError")
 except KeyboardInterrupt: # stop motors before exit
+    # stop buzzer
+    grovepi.digitalWrite(BUZZER_PIN,0)
     stop(motors)
     sys.exit()
