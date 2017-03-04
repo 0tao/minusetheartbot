@@ -6,6 +6,7 @@ import grovepi
 import grove_i2c_motor_driver
 import itg3200 # library for grove gyroscope
 import time    # sleep
+import serial
 
 # update with your bus number and address
 gyro = itg3200.SensorITG3200(1, 0x68)
@@ -18,6 +19,8 @@ directions = [1, 0, 1, 1]
 speeds = [1, 100, 1, 100]
 speedLimit = 100
 s = [100, 100]
+ser = serial.Serial('/dev/ttyUSB0', 9600)
+servo = 90
 
 # socket init
 serverPort = 12000
@@ -163,6 +166,14 @@ try:
                         directions = [1, 1, 1, 1]
                         speeds = [100, 100, 100, 100]
                         speedLimit = 10
+                    elif (x=='e'):
+                        if servo > 40:
+                            servo -= 5
+                            ser.write(str(servo))
+                    elif (x=='q'):
+                        if servo < 140:
+                            servo += 5
+                            ser.write(str(servo))
                     elif (x==' '):  # stop
                         speedLimit = 0
 
