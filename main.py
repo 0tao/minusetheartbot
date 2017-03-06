@@ -118,10 +118,10 @@ def explore(distances, velocities):
 def correctRotation(rotation, velocities):
     if CONSOLE:
         print("correcting rotation")
-    if rotation < 0 && rotation > 40: 
+    if rotation < 0 and rotation > 40: 
         for i in range(len(velocities)):
             velocities[i] += (0-rotation)/10
-    elif rotation > 10 && rotation < 50:
+    elif rotation > 10 and rotation < 50:
         for i in range(len(velocities)):
             velocities[i] -= (rotation-10)/10
 
