@@ -133,51 +133,55 @@ def stop(motors):
     setVelocities(motors, [0,0,0,0], 0);
     time.sleep(1)
 
-try:
+def main():
     try:
-        motors = initMotors()
-            
-    except IOError:
-        print("Unable to find the motor driver, check the addrees and press reset on the motor driver and try again")
-        
-    while True:
         try:
-            time.sleep(0.01)
-            rotation = getRotation()
-            correctRotation(rotation, velocities)
-            # Read distance value from Ultrasonic
-            getDistances(distances)
-            explore(distances, velocities)
-            avoidObstacles(distances, velocities)
-            setVelocities(motors, velocities, speedLimit)
-
-            if CONSOLE:
-                print("-------------------- "+str(loopCount)+" --------------------")
-                print("R: " + str(rotation))
-                print("D: " + str(distances))
-                print("V: " + str([int(i) for i in velocities]))
-                loopCount += 1
-
-            if OLED:
-                #display, note this may slow the robot reaction down
-                grove_oled.oled_setTextXY(11,0)
-                grove_oled.oled_putString("ROT:"+str(int(rotation)))
-                for i in range (len(distances)):
-                    grove_oled.oled_setTextXY(i,0)
-                    grove_oled.oled_putString(str(i)+":"+str(distances[i]).zfill(3))
-                for i in range(len(velocities)):
-                    grove_oled.oled_setTextXY(i,6)
-                    grove_oled.oled_putString(str(i)+":"+str(int(velocities[i])).zfill(4))
-            grovepi.digitalWrite(BUZZER_PIN,0)
-
-        except TypeError:
-            print ("TypeError")
-            grovepi.digitalWrite(BUZZER_PIN,1)
-            subprocess.call(['./avrdude_test.sh'])
+            motors = initMotors()
+                
         except IOError:
-            print ("IOError")
-except KeyboardInterrupt: # stop motors before exit
-    # stop buzzer
-    grovepi.digitalWrite(BUZZER_PIN,0)
-    stop(motors)
-    sys.exit()
+            print("Unable to find the motor driver, check the addrees and press reset on the motor driver and try again")
+            
+        while True:
+            try:
+                time.sleep(0.01)
+                rotation = getRotation()
+                correctRotation(rotation, velocities)
+                # Read distance value from Ultrasonic
+                getDistances(distances)
+                explore(distances, velocities)
+                avoidObstacles(distances, velocities)
+                setVelocities(motors, velocities, speedLimit)
+
+                if CONSOLE:
+                    print("-------------------- "+str(loopCount)+" --------------------")
+                    print("R: " + str(rotation))
+                    print("D: " + str(distances))
+                    print("V: " + str([int(i) for i in velocities]))
+                    loopCount += 1
+
+                if OLED:
+                    #display, note this may slow the robot reaction down
+                    grove_oled.oled_setTextXY(11,0)
+                    grove_oled.oled_putString("ROT:"+str(int(rotation)))
+                    for i in range (len(distances)):
+                        grove_oled.oled_setTextXY(i,0)
+                        grove_oled.oled_putString(str(i)+":"+str(distances[i]).zfill(3))
+                    for i in range(len(velocities)):
+                        grove_oled.oled_setTextXY(i,6)
+                        grove_oled.oled_putString(str(i)+":"+str(int(velocities[i])).zfill(4))
+                grovepi.digitalWrite(BUZZER_PIN,0)
+
+            except TypeError:
+                print ("TypeError")
+                grovepi.digitalWrite(BUZZER_PIN,1)
+                subprocess.call(['./avrdude_test.sh'])
+            except IOError:
+                print ("IOError")
+    except KeyboardInterrupt: # stop motors before exit
+        # stop buzzer
+        grovepi.digitalWrite(BUZZER_PIN,0)
+        stop(motors)
+        sys.exit()
+
+if __name__ == "__main__":
+    main()
