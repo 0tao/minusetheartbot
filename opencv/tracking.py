@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # import the necessary packages
+import sys
+from socket import *
 import picamera
 import time
 import numpy as np
@@ -18,6 +20,14 @@ rupper = (10, 255, 255)
 
 width = 800
 height = 608
+
+debug = 0
+
+#if debug:
+serverName = '10.209.11.115'
+serverPort = 12000
+clientSocket = socket(AF_INET, SOCK_STREAM)
+clientSocket.connect((serverName, serverPort))
  
 with picamera.PiCamera() as camera:
 	camera.resolution = (width, height)
@@ -61,42 +71,63 @@ with picamera.PiCamera() as camera:
                         # centroid
                         rc = max(rcnts, key=cv2.contourArea)
                         ((rx, ry), rradius) = cv2.minEnclosingCircle(rc)
-                        rM = cv2.moments(rc)
-                        rcenter = (int(rM["m10"] / rM["m00"]), int(rM["m01"] / rM["m00"]))
-         
-                        # only proceed if the radius meets a minimum size
-                        if rradius > 0 and rradius < 10:
-                                print rradius, rx, ry
-                                # draw the circle and centroid on the frame,
-                                # then update the list of tracked points
-                                cv2.circle(frame, (int(rx), int(ry)), int(rradius),
-                                        (0, 255, 255), 2)
-                                cv2.circle(frame, rcenter, 5, (0, 0, 255), -1)
+                        if debug:
+                            rM = cv2.moments(rc)
+                            rcenter = (int(rM["m10"] / rM["m00"]), int(rM["m01"] / rM["m00"]))
+             
+                            # only proceed if the radius meets a minimum size
+                            if rradius > 0 and rradius < 10:
+                                    #print rradius, rx, ry
+                                    # draw the circle and centroid on the frame,
+                                    # then update the list of tracked points
+                                    cv2.circle(frame, (int(rx), int(ry)), int(rradius),
+                                            (0, 255, 255), 2)
+                                    cv2.circle(frame, rcenter, 5, (0, 0, 255), -1)
                         bc = max(bcnts, key=cv2.contourArea)
                         ((bx, by), bradius) = cv2.minEnclosingCircle(bc)
-                        bM = cv2.moments(bc)
-                        bcenter = (int(bM["m10"] / bM["m00"]), int(bM["m01"] / bM["m00"]))
+                        if debug:
+                            bM = cv2.moments(bc)
+                            bcenter = (int(bM["m10"] / bM["m00"]), int(bM["m01"] / bM["m00"]))
+             
+                            # only proceed if the radius meets a minimum size
+                            if bradius > 0 and bradius < 10:
+                                    #print bradius, bx, by
+                                    # draw the circle and centroid on the frame,
+                                    # then update the list of tracked points
+                                    cv2.circle(frame, (int(bx), int(by)), int(bradius),
+                                            (0, 255, 255), 2)
+                                    cv2.circle(frame, bcenter, 5, (0, 0, 255), -1)
+
+                        x = (rx+bx)/2
+                        y = (ry+by)/2
+                        cv2.circle(frame, (int(x), int(y)), 30, (255, 255, 255), -1)
+                        heading = (by - ry) / (bx - rx)
+                        #print x, y, heading
+                        #if debug:
+                        if heading > 0.4:
+                            #print 'l'
+                            clientSocket.send('a')
          
-                        # only proceed if the radius meets a minimum size
-                        if bradius > 0 and bradius < 10:
-                                print bradius, bx, by
-                                # draw the circle and centroid on the frame,
-                                # then update the list of tracked points
-                                cv2.circle(frame, (int(bx), int(by)), int(bradius),
-                                        (0, 255, 255), 2)
-                                cv2.circle(frame, bcenter, 5, (0, 0, 255), -1)
-         
+                        elif heading < -0.4:
+                            #print 'r'
+                            clientSocket.send('d')
+
+                        else:
+                            #print 's'
+                            clientSocket.send(' ')
+
+clientSocket.close()
 
                 # show the frame to our screen
                 #cv2.imshow("Frame", frame)
                 #cv2.imshow("Mask", mask)
-                cv2.imwrite( "frame.jpg", frame); 
-                cv2.imwrite( "rmask.jpg", rmask); 
-                cv2.imwrite( "bmask.jpg", bmask); 
-                key = cv2.waitKey(1) & 0xFF
+                #cv2.imwrite( "frame.jpg", frame); 
+                #cv2.imwrite( "rmask.jpg", rmask); 
+                #cv2.imwrite( "bmask.jpg", bmask); 
+                #key = cv2.waitKey(1) & 0xFF
 
                 # if the 'q' key is pressed, stop the loop
-                if key == ord("q"):
-                        break
+                #if key == ord("q"):
+                #        break
 
         #cv2.destroyAllWindows()
