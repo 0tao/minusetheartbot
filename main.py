@@ -6,12 +6,18 @@ import subprocess # for calling shell script
 import grovepi # grovepi
 import grove_i2c_motor_driver
 import grove_oled
+import argparse # argparse
 
 __author__ = "Jack B. Du (Jiadong Du)"
 __email__ = "jackbdu@nyu.edu"
 __copyright__ = "Copyright 2017, Jack B. Du (Jiadong Du)"
 __license__ = "Apache-2.0"
 __status__ = "Development"
+
+parser = argparse.ArgumentParser(description="Minus E the Art Bot")
+parser.add_argument('-p', '--port', type=int, default=12000, help="port number")
+
+args = parser.parse_args()
 
 OLED = False
 CONSOLE = False
@@ -33,15 +39,16 @@ if OLED:
 grovepi.pinMode(BUZZER_PIN,"OUTPUT")
 
 # socket init
-serverPort = 12000
+serverPort = args.port
 serverSocket = socket(AF_INET,SOCK_STREAM)
 serverSocket.bind(('',serverPort))
 serverSocket.listen(1)
+
 if CONSOLE:
     print 'The server is running'
 
-velocities = [1, 1, 1, 1]
-speedLimit = 100
+velocities = [0, 0, 0, 0]
+speedLimit = 0
 
 # initalize motors and return two motor pairs, 02 and 13
 def initMotors():
@@ -100,24 +107,18 @@ def main():
                 while True:
                     connectionSocket, addr = serverSocket.accept()
 
-                    x = 0
-                    while x != chr(27):
-                        x = connectionSocket.recv(1024)
-                        print "Client:", x
-                        if (x=='w' or x=='k'):    # forward
-                            velocities = [10,10,10,10]
-                            speedLimit = 10
-                        elif (x=='s' or x=='j'):  # backward
-                            velocities = [10,10,10,10]
-                            speedLimit = 10
-                        elif (x=='a' or x=='h'):  # turn left
-                            velocities = [10,10,10,10]
-                            speedLimit = 10
-                        elif (x=='d' or x=='l'):  # turn right
-                            velocities = [10,10,10,10]
-                            speedLimit = 10
-                        elif (x==' '):  # stop
-                            speedLimit = 0
+                    connected = True
+                    while connected:
+                        stringFromClient = connectionSocket.recv(1024)
+                        print "Client:", stringFromClient
+
+                        try: 
+                            listFromClient = map(int, stringFromClient.lstrip('[').rstrip(']').split(', '))
+                            velocities = listFromClient[:4]
+                            speedLimit = listFromClient[-1]
+                            print velocities
+                        except:
+                            print "Converting Error"
 
                         if CONSOLE:
                             print("-------------------- "+str(loopCount)+" --------------------")
@@ -137,6 +138,7 @@ def main():
                                 grove_oled.oled_setTextXY(i,6)
                                 grove_oled.oled_putString(str(i)+":"+str(int(velocities[i])).zfill(4))
                         setVelocities(motors, velocities, speedLimit)
+                        connectionSocket.send("OK")
                     stop(motors)
                     connectionSocket.close()
 
@@ -146,6 +148,8 @@ def main():
                 subprocess.call(['./avrdude_test.sh'])
             except IOError:
                 print ("IOError")
+            stop(motors)
+            connectionSocket.close()
     except KeyboardInterrupt: # stop motors before exit
         # stop buzzer
         connectionSocket.close()
