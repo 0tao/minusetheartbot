@@ -20,8 +20,8 @@ bupper = (112, 255, 255)
 rlower = (160, 0, 0)
 rupper = (179, 255, 255)
 
-width = 1024
-height = 608
+width = 800
+height = 600
 
 debug = 1
 
@@ -34,6 +34,7 @@ clientSocket.connect((serverName, serverPort))
  
 
 while True:
+
         _, frame = camera.read()
         frame = imutils.resize(frame, width=width)
  
@@ -94,7 +95,7 @@ while True:
                             # then update the list of tracked points
                             cv2.circle(frame, (int(bx), int(by)), int(bradius),
                                     (0, 255, 255), 2)
-                            cv2.circle(frame, bcenter, int(bradius), (0, 0, 255), -1)
+                            cv2.circle(frame, bcenter, int(bradius), (255, 0, 0), -1)
 
                 x = (rx+bx)/2
                 y = (ry+by)/2
@@ -106,19 +107,23 @@ while True:
                 print x, y
                 #if debug:
                 if heading > 0.2:
-                    #print 'l'
-                    clientSocket.send('a')
- 
+                    velocities = [1,1,1,1]
+                    speedLimit = 50
+                    if heading < 1:
+                        speedLimit = 10
+                    elif heading < 0.5:
+                        speedLimit *= heading
                 elif heading < -0.2:
-                    #print 'r'
-                    clientSocket.send('d')
-
+                    velocities = [-1,-1,-1,-1]
+                    speedLimit = 50
+                    if heading > -1:
+                        speedLimit = 10
+                    elif heading < 0.5:
+                        speedLimit *= -heading
                 else:
-                    #print 's'
-                    clientSocket.send(' ')
-
-
-
+                    velocities = [1,1,1,1]
+                    speedLimit = 0
+                clientSocket.send(str(velocities+[int(speedLimit)])+"S")
 
         # show the frame to our screen
         cv2.imshow("Frame", frame)
