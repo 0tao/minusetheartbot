@@ -1,11 +1,11 @@
 #!/usr/bin/env python
+from socket import *
 import sys     # exit
 import time    # sleep
 import subprocess # for calling shell script
 import grovepi # grovepi
 import grove_i2c_motor_driver
 import grove_oled
-import itg3200 # library for grove gyroscope
 
 __author__ = "Jack B. Du (Jiadong Du)"
 __email__ = "jackbdu@nyu.edu"
@@ -18,8 +18,6 @@ CONSOLE = False
 
 BUZZER_PIN = 15
 # pin numbers for ultrasonic rangers # note D14 corresponds to A0
-ULTRASONIC_RANGERS_PINS = (8, 4, 3, 14, 2, 5, 7, 6)
-GYRO_ADDR = 0x68
 MOTORS02_ADDR = 0x0f
 MOTORS13_ADDR = 0x0a
 
@@ -34,12 +32,14 @@ if OLED:
 # initialize buzzer
 grovepi.pinMode(BUZZER_PIN,"OUTPUT")
 
-# update with your bus number and address
-gyro = itg3200.SensorITG3200(1, GYRO_ADDR)
-gyro.default_init()
+# socket init
+serverPort = 12000
+serverSocket = socket(AF_INET,SOCK_STREAM)
+serverSocket.bind(('',serverPort))
+serverSocket.listen(1)
+if CONSOLE:
+    print 'The server is running'
 
-distances = [0] * 8
-# + denote clockwise, - denote counter-clockwise
 velocities = [1, 1, 1, 1]
 speedLimit = 100
 
@@ -77,54 +77,6 @@ def limitSpeeds(velocities, speedLimit):
         for i in range(4):
             velocities[i] *= speedLimit/maxSpeed
 
-# get the distances from each ultrasonic ranger
-def getDistances(distances):
-    if CONSOLE:
-        print("reading ultrasonic rangers")
-    for i in range(len(ULTRASONIC_RANGERS_PINS)):
-        distances[i] = grovepi.ultrasonicRead(ULTRASONIC_RANGERS_PINS[i])
-
-# get rotation from gyroscope
-def getRotation():
-    # storing the z-axis gyro value
-    return gyro.read_data()[2]+40
-# avoid getting hit
-def avoidObstacles(distances, velocities):
-    if CONSOLE:
-        print("handling obstacles")
-    reactDistance = 100
-    for i in range(len(distances)):
-        if distances[i] < reactDistance:
-            velocities[(i/2+1)%4] -= reactDistance-distances[i]
-            velocities[(i/2+3)%4] += reactDistance-distances[i]
-            # if the ranger is between two motors
-            if i%2 == 1:
-                velocities[(i/2+2)%4] -= reactDistance-distances[i]
-                velocities[(i/2+4)%4] += reactDistance-distances[i]
-
-def explore(distances, velocities):
-    if CONSOLE:
-        print("exploring")
-    for i in range(len(distances)):
-        if distances[i] > 300:
-            velocities[(i/2+1)%4] += (distances[i]-300)/10
-            velocities[(i/2+3)%4] -= (distances[i]-300)/10
-            # if the ranger is between two motors
-            if i%2 == 1:
-                velocities[(i/2+2)%4] += (distances[i]-300)/10
-                velocities[(i/2+4)%4] -= (distances[i]-300)/10
-            break
-
-def correctRotation(rotation, velocities):
-    if CONSOLE:
-        print("correcting rotation")
-    if rotation < 0 and rotation > 40: 
-        for i in range(len(velocities)):
-            velocities[i] += (0-rotation)/10
-    elif rotation > 10 and rotation < 50:
-        for i in range(len(velocities)):
-            velocities[i] -= (rotation-10)/10
-
 # stop motors
 def stop(motors):
     if CONSOLE:
@@ -144,32 +96,49 @@ def main():
         while True:
             try:
                 time.sleep(0.01)
-                rotation = getRotation()
-                correctRotation(rotation, velocities)
-                # Read distance value from Ultrasonic
-                getDistances(distances)
-                explore(distances, velocities)
-                avoidObstacles(distances, velocities)
-                setVelocities(motors, velocities, speedLimit)
 
-                if CONSOLE:
-                    print("-------------------- "+str(loopCount)+" --------------------")
-                    print("R: " + str(rotation))
-                    print("D: " + str(distances))
-                    print("V: " + str([int(i) for i in velocities]))
-                    loopCount += 1
+                while True:
+                    connectionSocket, addr = serverSocket.accept()
 
-                if OLED:
-                    #display, note this may slow the robot reaction down
-                    grove_oled.oled_setTextXY(11,0)
-                    grove_oled.oled_putString("ROT:"+str(int(rotation)))
-                    for i in range (len(distances)):
-                        grove_oled.oled_setTextXY(i,0)
-                        grove_oled.oled_putString(str(i)+":"+str(distances[i]).zfill(3))
-                    for i in range(len(velocities)):
-                        grove_oled.oled_setTextXY(i,6)
-                        grove_oled.oled_putString(str(i)+":"+str(int(velocities[i])).zfill(4))
-                grovepi.digitalWrite(BUZZER_PIN,0)
+                    x = 0
+                    while x != chr(27):
+                        x = connectionSocket.recv(1024)
+                        print "Client:", x
+                        if (x=='w' or x=='k'):    # forward
+                            velocities = [10,10,10,10]
+                            speedLimit = 10
+                        elif (x=='s' or x=='j'):  # backward
+                            velocities = [10,10,10,10]
+                            speedLimit = 10
+                        elif (x=='a' or x=='h'):  # turn left
+                            velocities = [10,10,10,10]
+                            speedLimit = 10
+                        elif (x=='d' or x=='l'):  # turn right
+                            velocities = [10,10,10,10]
+                            speedLimit = 10
+                        elif (x==' '):  # stop
+                            speedLimit = 0
+
+                        if CONSOLE:
+                            print("-------------------- "+str(loopCount)+" --------------------")
+                            print("R: " + str(rotation))
+                            print("D: " + str(distances))
+                            print("V: " + str([int(i) for i in velocities]))
+                            loopCount += 1
+
+                        if OLED:
+                            #display, note this may slow the robot reaction down
+                            grove_oled.oled_setTextXY(11,0)
+                            grove_oled.oled_putString("ROT:"+str(int(rotation)))
+                            for i in range (len(distances)):
+                                grove_oled.oled_setTextXY(i,0)
+                                grove_oled.oled_putString(str(i)+":"+str(distances[i]).zfill(3))
+                            for i in range(len(velocities)):
+                                grove_oled.oled_setTextXY(i,6)
+                                grove_oled.oled_putString(str(i)+":"+str(int(velocities[i])).zfill(4))
+                        setVelocities(motors, velocities, speedLimit)
+                    stop(motors)
+                    connectionSocket.close()
 
             except TypeError:
                 print ("TypeError")
@@ -179,6 +148,7 @@ def main():
                 print ("IOError")
     except KeyboardInterrupt: # stop motors before exit
         # stop buzzer
+        connectionSocket.close()
         grovepi.digitalWrite(BUZZER_PIN,0)
         stop(motors)
         sys.exit()
