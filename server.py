@@ -4,23 +4,23 @@ from socket import * # socket
 import sys     # exit
 import grovepi
 import grove_i2c_motor_driver
-import itg3200 # library for grove gyroscope
+#import itg3200 # library for grove gyroscope
 import time    # sleep
-import serial
+#import serial
 
 # update with your bus number and address
-gyro = itg3200.SensorITG3200(1, 0x68)
-gyro.default_init()
+#gyro = itg3200.SensorITG3200(1, 0x68)
+#gyro.default_init()
 # pin numbers for ultrasonic rangers # note D14 corresponds to A0
 ultrasonic_rangers = (8, 4, 3, 14, 2, 5, 7, 6)
 distances = [0] * 8
 # 0 denote clockwise, 1 denote counter-clockwise
 directions = [1, 0, 1, 1]
 speeds = [1, 100, 1, 100]
-speedLimit = 100
+speedLimit = 10
 s = [100, 100]
-ser = serial.Serial('/dev/ttyUSB0', 9600)
-servo = 90
+#ser = serial.Serial('/dev/ttyUSB0', 9600)
+#servo = 90
 
 # socket init
 serverPort = 12000
@@ -65,9 +65,9 @@ def getDistances(ultrasonic_rangers, distances):
         distances[i] = grovepi.ultrasonicRead(ultrasonic_rangers[i])
 
 # get rotation from gyroscope
-def getRotation():
+#def getRotation():
     # storing the z-axis gyro value
-    return gyro.read_data()[2]+40
+#    return gyro.read_data()[2]+40
 #
 # normalize the speed by setting the faster wheel to ms
 # and scale the other wheel speed accordingly
@@ -140,7 +140,7 @@ try:
     while True:
         try:
             time.sleep(0.01)
-            rotation = getRotation()
+            #rotation = getRotation()
             #print("rotation", rotation)
             #forward(motors[1], s, rotation)
 
@@ -161,19 +161,19 @@ try:
                     elif (x=='a' or x=='h'):  # turn left
                         directions = [0, 0, 0, 0]
                         speeds = [100, 100, 100, 100]
-                        speedLimit = 10
+                        speedLimit = 8
                     elif (x=='d' or x=='l'):  # turn right
                         directions = [1, 1, 1, 1]
                         speeds = [100, 100, 100, 100]
-                        speedLimit = 10
-                    elif (x=='e'):
-                        if servo > 40:
-                            servo -= 5
-                            ser.write(str(servo))
-                    elif (x=='q'):
-                        if servo < 140:
-                            servo += 5
-                            ser.write(str(servo))
+                        speedLimit = 8
+                    #elif (x=='e'):
+                    #    if servo > 40:
+                    #        servo -= 5
+                    #        ser.write(str(servo))
+                    #elif (x=='q'):
+                    #    if servo < 140:
+                    #        servo += 5
+                    #        ser.write(str(servo))
                     elif (x==' '):  # stop
                         speedLimit = 0
 
