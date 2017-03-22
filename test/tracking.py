@@ -21,8 +21,9 @@ rlower = (160, 0, 0)
 rupper = (179, 255, 255)
 
 width = 800
-height = 600
-
+height = 450
+cx = width/2
+cy = height/2
 debug = 1
 
 camera = cv2.VideoCapture(0)
@@ -104,31 +105,21 @@ while True:
                     heading = (by - ry) / (bx - rx)
                 else:
                     heading = 0
-                print x, y
-                #if debug:
-                if heading > 0.2:
-                    velocities = [1,1,1,1]
-                    speedLimit = 50
-                    if heading < 1:
-                        speedLimit = 10
-                    elif heading < 0.5:
-                        speedLimit *= heading
-                elif heading < -0.2:
-                    velocities = [-1,-1,-1,-1]
-                    speedLimit = 50
-                    if heading > -1:
-                        speedLimit = 10
-                    elif heading < 0.5:
-                        speedLimit *= -heading
-                else:
-                    velocities = [1,1,1,1]
-                    speedLimit = 0
+                #print x, y
+                alpha = math.atan(heading)
+                speedLimit = 10 + 90 * math.hypot(x - cx, y - cy) / math.hypot(-cx, -cy) 
+
+                v03 = int((cx-x)*math.cos(alpha)-(cy-y)*math.sin(alpha))
+                v12 = int((cx-x)*math.sin(alpha)+(cy-y)*math.cos(alpha))
+
+                print v03, v12, speedLimit, x, y
+                velocities = [-int(v03), -int(v12), int(v03), int(v12)]
                 clientSocket.send(str(velocities+[int(speedLimit)])+"S")
 
         # show the frame to our screen
         cv2.imshow("Frame", frame)
         #cv2.imshow("Mask", mask)
-        #cv2.imwrite( "frame.jpg", frame); 
+        cv2.imwrite( "frame.jpg", frame); 
         #cv2.imwrite( "rmask.jpg", rmask); 
         #cv2.imwrite( "bmask.jpg", bmask); 
         key = cv2.waitKey(1) & 0xFF
