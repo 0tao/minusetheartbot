@@ -100,17 +100,29 @@ while True:
 
                 x = (rx+bx)/2
                 y = (ry+by)/2
+                dx = bx-rx
+                dy = by-ry
                 #cv2.circle(frame, (int(x), int(y)), int(math.sqrt((rx-bx)**2+(ry-by)**2)+rradius+bradius), (255, 255, 255), -1)
                 if bx-rx != 0:
-                    heading = (by - ry) / (bx - rx)
+                    heading = dy/dx
                 else:
                     heading = 0
                 #print x, y
-                alpha = math.atan(heading)
+                
+                alpha = abs(math.atan(heading))
+                if dx > 0:
+                  if dy < 0:
+                    alpha += 3*math.pi/2
+                elif dx < 0:
+                  if dy > 0:
+                    alpha += math.pi/2
+                  elif dy < 0:
+                    alpha += math.pi
+
                 speedLimit = 10 + 90 * math.hypot(x - cx, y - cy) / math.hypot(-cx, -cy) 
 
-                v03 = int((cx-x)*math.cos(alpha)-(cy-y)*math.sin(alpha))
-                v12 = int((cx-x)*math.sin(alpha)+(cy-y)*math.cos(alpha))
+                v03 = int((cx-x)*math.cos(alpha)+(cy-y)*math.sin(alpha))
+                v12 = int(-(cx-x)*math.sin(alpha)+(cy-y)*math.cos(alpha))
 
                 print v03, v12, speedLimit, x, y
                 velocities = [-int(v03), -int(v12), int(v03), int(v12)]
