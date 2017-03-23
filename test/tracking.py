@@ -17,13 +17,15 @@ blower = (92, 100, 0)
 bupper = (112, 255, 255)
 #rlower = (0, 0, 0)
 #rupper = (10, 255, 255)
-rlower = (160, 0, 0)
-rupper = (179, 255, 255)
+#rlower = (160, 0, 0)
+#rupper = (179, 255, 255)
+rlower = (160, 100, 100)
+rupper = (179, 255, 200)
 
 width = 800
 height = 450
-cx = width/2
-cy = height/2
+cx = 250
+cy = 175
 debug = 1
 
 camera = cv2.VideoCapture(0)
@@ -119,7 +121,13 @@ while True:
                   elif dy < 0:
                     alpha += math.pi
 
-                speedLimit = 10 + 90 * math.hypot(x - cx, y - cy) / math.hypot(-cx, -cy) 
+#                speedLimit = 10 * 90 * math.hypot(x - cx, y - cy) / math.hypot(-x, -y) 
+
+                if math.hypot(x - cx, y - cy) < 200:
+                    speedLimit = 50 * math.hypot(x - cx, y - cy) / 100
+                else:
+                    speedLimit = 50
+
 
                 v03 = int((cx-x)*math.cos(alpha)+(cy-y)*math.sin(alpha))
                 v12 = int(-(cx-x)*math.sin(alpha)+(cy-y)*math.cos(alpha))
