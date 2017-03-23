@@ -152,8 +152,8 @@ def goTo(rx, ry, bx, by, dstx, dsty, curr):
         # this vector is denoted in robot coordinate system
         # by converting from (aka rotating) the video coordinate system
         # Equation (copied below) can be found on Wikipedia, Rotation of Axes: https://en.wikipedia.org/wiki/Rotation_of_axes
-        # x' = x\text(cos)\theta + y\text(sin)\theta
-        # y' = -x\text(sin)\theta + y\text(cos)\theta
+        # x' = x\cos(\theta) + y\sin(\theta)
+        # y' = -x\sin(\theta) + y\cos(\theta)
         # where (x', y') is the new coordinate and (x, y) is the old coordinate
         # Here, since the red-to-blue vector (x axis of robot coordinate system)
         # is parallel to the actual motor0 and motor2 (rather than the motor0-motor2 vector)
