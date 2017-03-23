@@ -110,13 +110,15 @@ def main():
                     connected = True
                     while connected:
                         stringFromClient = connectionSocket.recv(1024)
-                        print "Client:", stringFromClient
+                        if CONSOLE:
+                            print "Client:", stringFromClient
 
                         try: 
                             listFromClient = map(int, stringFromClient.lstrip('[').rstrip(']').split(', '))
                             velocities = listFromClient[:4]
                             speedLimit = listFromClient[-1]
-                            print velocities
+                            if CONSOLE:
+                                print velocities
                         except:
                             print "Converting Error"
 
