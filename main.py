@@ -3,10 +3,10 @@ from socket import *
 import sys     # exit
 import time    # sleep
 import subprocess # for calling shell script
-import grovepi # grovepi
-import grove_i2c_motor_driver
-import grove_oled
 import argparse # argparse
+from lib import grovepi # grovepi
+from lib import grove_i2c_motor_driver
+from lib import grove_oled
 
 __author__ = "Jack B. Du (Jiadong Du)"
 __email__ = "jackbdu@nyu.edu"
