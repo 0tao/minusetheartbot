@@ -7,6 +7,7 @@ import numpy as np
 import imutils
 import cv2
 import math
+from random import randint
  
 # define the lower and upper boundaries of the "green"
 # ball in the HSV color space, then initialize the
@@ -21,12 +22,15 @@ bupper = (112, 255, 255)
 #rupper = (179, 255, 255)
 rlower = (160, 100, 100)
 rupper = (179, 255, 200)
+rx, ry, bx, by = 0, 0, 1, 1
 
 width = 800
 height = 450
 debug = 1
 
-routes = [(200,100),(200,350),(600,100),(600,350)]
+routes = [(150,100),(150,350),(550,100),(550,350)]
+#routes = [(300,100),(500,100),(500,350),(300,350)]
+routes = [(width/2, height/2)]
 currP = [0]
 
 camera = cv2.VideoCapture(0)
@@ -34,7 +38,7 @@ camera = cv2.VideoCapture(0)
 #height=int(camera.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))
 fourcc = cv2.cv.CV_FOURCC('m','p','4','v')
 out = cv2.VideoWriter()
-out.open('output.mp4', fourcc, 10, (width,height))
+out.open('output.mp4', fourcc, 20, (width,height))
 #if debug:
 serverName = '10.209.11.115'
 serverPort = 12000
@@ -50,40 +54,51 @@ def goTo(rx, ry, bx, by, dstx, dsty, curr):
     if bx-rx != 0:
         heading = dy/dx
     else:
-        heading = 0
+        heading = 100000
     #print x, y
     
     alpha = abs(math.atan(heading))
     if dx > 0:
-      if dy < 0:
-        alpha += 3*math.pi/2
+        if dy < 0:
+            alpha += 3*math.pi/2
     elif dx < 0:
-      if dy > 0:
-        alpha += math.pi/2
-      elif dy < 0:
-        alpha += math.pi
+        if dy > 0:
+            alpha += math.pi/2
+        else:
+            alpha += math.pi
+    else:
+        if dy > 0:
+            alpha = math.pi/2
+        else:
+            alpha = 3*math.pi/2
 
     if math.hypot(x - dstx, y - dsty) < 200:
         speedLimit = 50 * math.hypot(x - dstx, y - dsty) / 100
     else:
         speedLimit = 50
 
-
-    v03 = int((dstx-x)*math.cos(alpha)+(dsty-y)*math.sin(alpha))
-    v12 = int(-(dstx-x)*math.sin(alpha)+(dsty-y)*math.cos(alpha))
+    if math.hypot(x - dstx, y - dsty) < 20:
+        v03 = randint(-9,9)
+        v12 = randint(-9,9)
+        speedLimit = 30
+    else:
+        v03 = int((dstx-x)*math.cos(alpha)+(dsty-y)*math.sin(alpha))
+        v12 = int(-(dstx-x)*math.sin(alpha)+(dsty-y)*math.cos(alpha))
 
     print v03, v12, speedLimit, x, y
     velocities = [-int(v03), -int(v12), int(v03), int(v12)]
+
     clientSocket.send(str(velocities+[int(speedLimit)]))
     stringFromServer = clientSocket.recv(1024)
     print "Server: "+stringFromServer
     print math.hypot(x - dstx, y - dsty),currP
-    if math.hypot(x - dstx, y - dsty) < 30:
-        if curr[0]+1 < len(routes):
-            curr[0] += 1
-            print "+"
-        else:
-            curr[0] = 0
+    #if math.hypot(x - dstx, y - dsty) < 30:
+    #    if curr[0]+1 < len(routes):
+    #        curr[0] += 1
+    #        print "+"
+    #    else:
+    #        curr[0] = 0
+
 
 while (camera.isOpened()):
 
@@ -151,13 +166,13 @@ while (camera.isOpened()):
                                     (0, 255, 255), 2)
                             cv2.circle(frame, bcenter, int(bradius), (255, 0, 0), -1)
 
-                goTo(rx, ry, bx, by, routes[currP[0]][0], routes[currP[0]][1], currP)
+        goTo(rx, ry, bx, by, routes[currP[0]][0], routes[currP[0]][1], currP)
 
         # show the frame to our screen
         cv2.imshow("Frame", frame)
-        out.write(frame)
+        #out.write(frame)
         #cv2.imshow("Mask", mask)
-        cv2.imwrite( "frame.jpg", frame); 
+        #cv2.imwrite( "frame.jpg", frame); 
         #cv2.imwrite( "rmask.jpg", rmask); 
         #cv2.imwrite( "bmask.jpg", bmask); 
         key = cv2.waitKey(1) & 0xFF
