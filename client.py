@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# This client program is used for testing the main.py by manually typing in the message
 import tty
 import sys
 from socket import *
