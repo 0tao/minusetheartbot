@@ -26,14 +26,22 @@ width = 800
 height = 450
 debug = 1
 
+routes = [(200,100),(200,350),(600,100),(600,350)]
+currP = [0]
+
 camera = cv2.VideoCapture(0)
+#width=int(camera.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH))
+#height=int(camera.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))
+fourcc = cv2.cv.CV_FOURCC('m','p','4','v')
+out = cv2.VideoWriter()
+out.open('output.mp4', fourcc, 10, (width,height))
 #if debug:
 serverName = '10.209.11.115'
 serverPort = 12000
 clientSocket = socket(AF_INET, SOCK_STREAM)
 clientSocket.connect((serverName, serverPort))
 
-def goTo(rx, ry, bx, by, dstx, dsty):
+def goTo(rx, ry, bx, by, dstx, dsty, curr):
     x = (rx+bx)/2
     y = (ry+by)/2
     dx = bx-rx
@@ -69,8 +77,15 @@ def goTo(rx, ry, bx, by, dstx, dsty):
     clientSocket.send(str(velocities+[int(speedLimit)]))
     stringFromServer = clientSocket.recv(1024)
     print "Server: "+stringFromServer
+    print math.hypot(x - dstx, y - dsty),currP
+    if math.hypot(x - dstx, y - dsty) < 30:
+        if curr[0]+1 < len(routes):
+            curr[0] += 1
+            print "+"
+        else:
+            curr[0] = 0
 
-while True:
+while (camera.isOpened()):
 
 
         _, frame = camera.read()
@@ -136,10 +151,11 @@ while True:
                                     (0, 255, 255), 2)
                             cv2.circle(frame, bcenter, int(bradius), (255, 0, 0), -1)
 
-                goTo(rx, ry, bx, by, width/2, height/2)
+                goTo(rx, ry, bx, by, routes[currP[0]][0], routes[currP[0]][1], currP)
 
         # show the frame to our screen
         cv2.imshow("Frame", frame)
+        out.write(frame)
         #cv2.imshow("Mask", mask)
         cv2.imwrite( "frame.jpg", frame); 
         #cv2.imwrite( "rmask.jpg", rmask); 
@@ -151,4 +167,6 @@ while True:
                 break
 
 clientSocket.close()
+camera.release()
+out.release()
 cv2.destroyAllWindows()
