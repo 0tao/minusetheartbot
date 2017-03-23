@@ -15,12 +15,14 @@ __license__ = "Apache-2.0"
 __status__ = "Development"
 
 parser = argparse.ArgumentParser(description="Minus E the Art Bot")
-parser.add_argument('-p', '--port', type=int, default=12000, help="port number")
+parser.add_argument('-p', '--port', type=int, default=12000, help="specify the port number")
+parser.add_argument('-o', '--oled', action='store_true', help="Toggle OLED display")
+parser.add_argument('-d', '--debug', action='store_true', help="Toggle debugging info")
 
 args = parser.parse_args()
 
-OLED = False
-CONSOLE = False
+OLED = args.oled
+CONSOLE = args.debug
 
 BUZZER_PIN = 15
 # pin numbers for ultrasonic rangers # note D14 corresponds to A0
@@ -30,30 +32,33 @@ MOTORS13_ADDR = 0x0a
 loopCount = 0
 
 if OLED:
+  if CONSOLE: print 'Initializing OLED ...'
     # initialize oled
     grove_oled.oled_init()
     grove_oled.oled_clearDisplay()
     grove_oled.oled_setNormalDisplay()
     grove_oled.oled_setVerticalMode()
+
 # initialize buzzer
 grovepi.pinMode(BUZZER_PIN,"OUTPUT")
 
-# socket init
+if CONSOLE: print 'Initializing server ...'
+# initialize socket
 serverPort = args.port
 serverSocket = socket(AF_INET,SOCK_STREAM)
 serverSocket.bind(('',serverPort))
 serverSocket.listen(1)
 
-if CONSOLE:
-    print 'The server is running'
+if CONSOLE: print 'Starting up the server'
 
+# initialize velocities and speedLimit
+# the speedLimit specifies a hard max limit for all wheels
 velocities = [0, 0, 0, 0]
 speedLimit = 0
 
 # initalize motors and return two motor pairs, 02 and 13
 def initMotors():
-    if CONSOLE:
-        print("initializeing motors")
+    if CONSOLE: print("Initializeing motors ...")
     # motor driver addresses accordingly
     motors02 = grove_i2c_motor_driver.motor_driver(address=MOTORS02_ADDR)
     motors13 = grove_i2c_motor_driver.motor_driver(address=MOTORS13_ADDR)
@@ -61,8 +66,7 @@ def initMotors():
 
 # set the velocities of the motors with the speedLimit as the fastest speed allowed
 def setVelocities((motors02, motors13), velocities, speedLimit):
-    if CONSOLE:
-        print("setting velocities")
+    if CONSOLE: print("Setting velocities ...")
     # get directions from the velocities
     directions02 = (1 if velocities[0] >= 0 else 2) * 4 + (1 if velocities[2] >= 0 else 2)
     directions13 = (1 if velocities[1] >= 0 else 2) * 4 + (1 if velocities[3] >= 0 else 2)
@@ -76,8 +80,7 @@ def setVelocities((motors02, motors13), velocities, speedLimit):
 
 # change the fastest speed to speedLimit and scale other speeds proportionally
 def limitSpeeds(velocities, speedLimit):
-    if CONSOLE:
-        print("converting speed")
+    if CONSOLE: print("Limiting speed ...")
     speedLimit += 0.0
     maxSpeed = max(abs(max(velocities)), abs(min(velocities)))
     if maxSpeed > 0:
@@ -86,8 +89,7 @@ def limitSpeeds(velocities, speedLimit):
 
 # stop motors
 def stop(motors):
-    if CONSOLE:
-        print("stopping the motors")
+    if CONSOLE: print("Stopping motors ...")
     #STOP
     setVelocities(motors, [0,0,0,0], 0);
     time.sleep(1)
@@ -105,43 +107,53 @@ def main():
                 time.sleep(0.01)
 
                 while True:
+                    if CONSOLE: print("Waiting for connection ...")
+                    # listening for connection
                     connectionSocket, addr = serverSocket.accept()
 
+                    if CONSOLE: print("Connected to " + str(addr) + " ...")
                     connected = True
                     while connected:
+                        if CONSOLE: print("Waiting for message ...")
                         stringFromClient = connectionSocket.recv(1024)
-                        if CONSOLE:
-                            print "Client:", stringFromClient
+                        if CONSOLE: print "Message received: ", stringFromClient
 
                         try: 
+                            # converting string to int list
+                            # message format: [v0, v1, v2, v3, sl]
                             listFromClient = map(int, stringFromClient.lstrip('[').rstrip(']').split(', '))
+                            # slice the velocities list
                             velocities = listFromClient[:4]
+                            # slice the speedLimit
                             speedLimit = listFromClient[-1]
+
+                            if OLED:
+                                #display, note this may slow the robot reaction down
+                                grove_oled.oled_setTextXY(11,0)
+                                grove_oled.oled_putString("ROT:"+str(int(rotation)))
+                                for i in range(len(velocities)):
+                                    grove_oled.oled_setTextXY(i,6)
+                                    grove_oled.oled_putString(str(i)+":"+str(int(velocities[i])).zfill(4))
                             if CONSOLE:
-                                print velocities
+                                print("-------------------- "+str(loopCount)+" --------------------")
+                                print("R: " + str(rotation))
+                                print("V: " + str([int(i) for i in velocities]))
+                                print("L: " + str(speedLimit)
+                                    loopCount += 1
+
                         except:
-                            print "Converting Error"
+                            if CONSOLE: print "Converting message Error: ", stringFromClient
 
-                        if CONSOLE:
-                            print("-------------------- "+str(loopCount)+" --------------------")
-                            print("R: " + str(rotation))
-                            print("D: " + str(distances))
-                            print("V: " + str([int(i) for i in velocities]))
-                            loopCount += 1
-
-                        if OLED:
-                            #display, note this may slow the robot reaction down
-                            grove_oled.oled_setTextXY(11,0)
-                            grove_oled.oled_putString("ROT:"+str(int(rotation)))
-                            for i in range (len(distances)):
-                                grove_oled.oled_setTextXY(i,0)
-                                grove_oled.oled_putString(str(i)+":"+str(distances[i]).zfill(3))
-                            for i in range(len(velocities)):
-                                grove_oled.oled_setTextXY(i,6)
-                                grove_oled.oled_putString(str(i)+":"+str(int(velocities[i])).zfill(4))
+                        if CONSOLE: print "Setting the velocities ..."
+                        # set the velocities
                         setVelocities(motors, velocities, speedLimit)
+
+                        if CONSOLE: print "Sending OK to client ..."
                         connectionSocket.send("OK")
+
+                    if CONSOLE: print("Disconnected to " + str(addr) + "!")
                     stop(motors)
+                    if CONSOLE: print("Closing the socket " + str(addr) + " ...")
                     connectionSocket.close()
 
             except TypeError:
@@ -153,7 +165,7 @@ def main():
             stop(motors)
             connectionSocket.close()
     except KeyboardInterrupt: # stop motors before exit
-        # stop buzzer
+        if CONSOLE: print("Keyboard Interrput!")
         connectionSocket.close()
         grovepi.digitalWrite(BUZZER_PIN,0)
         stop(motors)
