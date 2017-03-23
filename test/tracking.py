@@ -24,8 +24,6 @@ rupper = (179, 255, 200)
 
 width = 800
 height = 450
-cx = 250
-cy = 175
 debug = 1
 
 camera = cv2.VideoCapture(0)
@@ -34,7 +32,42 @@ serverName = '10.209.11.115'
 serverPort = 12000
 clientSocket = socket(AF_INET, SOCK_STREAM)
 clientSocket.connect((serverName, serverPort))
- 
+
+def goTo(rx, ry, bx, by, dstx, dsty):
+    x = (rx+bx)/2
+    y = (ry+by)/2
+    dx = bx-rx
+    dy = by-ry
+    #cv2.circle(frame, (int(x), int(y)), int(math.sqrt((rx-bx)**2+(ry-by)**2)+rradius+bradius), (255, 255, 255), -1)
+    if bx-rx != 0:
+        heading = dy/dx
+    else:
+        heading = 0
+    #print x, y
+    
+    alpha = abs(math.atan(heading))
+    if dx > 0:
+      if dy < 0:
+        alpha += 3*math.pi/2
+    elif dx < 0:
+      if dy > 0:
+        alpha += math.pi/2
+      elif dy < 0:
+        alpha += math.pi
+
+    if math.hypot(x - dstx, y - dsty) < 200:
+        speedLimit = 50 * math.hypot(x - dstx, y - dsty) / 100
+    else:
+        speedLimit = 50
+
+
+    v03 = int((dstx-x)*math.cos(alpha)+(dsty-y)*math.sin(alpha))
+    v12 = int(-(dstx-x)*math.sin(alpha)+(dsty-y)*math.cos(alpha))
+
+    print v03, v12, speedLimit, x, y
+    velocities = [-int(v03), -int(v12), int(v03), int(v12)]
+    return str(velocities+[int(speedLimit)])+'S'
+
 
 while True:
 
@@ -100,41 +133,7 @@ while True:
                                     (0, 255, 255), 2)
                             cv2.circle(frame, bcenter, int(bradius), (255, 0, 0), -1)
 
-                x = (rx+bx)/2
-                y = (ry+by)/2
-                dx = bx-rx
-                dy = by-ry
-                #cv2.circle(frame, (int(x), int(y)), int(math.sqrt((rx-bx)**2+(ry-by)**2)+rradius+bradius), (255, 255, 255), -1)
-                if bx-rx != 0:
-                    heading = dy/dx
-                else:
-                    heading = 0
-                #print x, y
-                
-                alpha = abs(math.atan(heading))
-                if dx > 0:
-                  if dy < 0:
-                    alpha += 3*math.pi/2
-                elif dx < 0:
-                  if dy > 0:
-                    alpha += math.pi/2
-                  elif dy < 0:
-                    alpha += math.pi
-
-#                speedLimit = 10 * 90 * math.hypot(x - cx, y - cy) / math.hypot(-x, -y) 
-
-                if math.hypot(x - cx, y - cy) < 200:
-                    speedLimit = 50 * math.hypot(x - cx, y - cy) / 100
-                else:
-                    speedLimit = 50
-
-
-                v03 = int((cx-x)*math.cos(alpha)+(cy-y)*math.sin(alpha))
-                v12 = int(-(cx-x)*math.sin(alpha)+(cy-y)*math.cos(alpha))
-
-                print v03, v12, speedLimit, x, y
-                velocities = [-int(v03), -int(v12), int(v03), int(v12)]
-                clientSocket.send(str(velocities+[int(speedLimit)])+"S")
+                clientSocket.send(goTo(rx, ry, bx, by, width/2, height/2))
 
         # show the frame to our screen
         cv2.imshow("Frame", frame)
