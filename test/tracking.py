@@ -66,12 +66,15 @@ def goTo(rx, ry, bx, by, dstx, dsty):
 
     print v03, v12, speedLimit, x, y
     velocities = [-int(v03), -int(v12), int(v03), int(v12)]
-    return str(velocities+[int(speedLimit)])+'S'
-
+    clientSocket.send(str(velocities+[int(speedLimit)]))
+    stringFromServer = clientSocket.recv(1024)
+    print "Server: "+stringFromServer
 
 while True:
 
+
         _, frame = camera.read()
+
         frame = imutils.resize(frame, width=width)
  
         # resize the frame, blur it, and convert it to the HSV
@@ -133,7 +136,7 @@ while True:
                                     (0, 255, 255), 2)
                             cv2.circle(frame, bcenter, int(bradius), (255, 0, 0), -1)
 
-                clientSocket.send(goTo(rx, ry, bx, by, width/2, height/2))
+                goTo(rx, ry, bx, by, width/2, height/2)
 
         # show the frame to our screen
         cv2.imshow("Frame", frame)
