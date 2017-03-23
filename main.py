@@ -159,7 +159,7 @@ def main():
             except TypeError:
                 print ("TypeError")
                 grovepi.digitalWrite(BUZZER_PIN,1)
-                subprocess.call(['./avrdude_test.sh'])
+                subprocess.call(['./lib/avrdude_test.sh'])
             except IOError:
                 print ("IOError")
             stop(motors)
