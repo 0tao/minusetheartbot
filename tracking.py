@@ -32,10 +32,20 @@ height = 450
 
 debug = True
 
+prevAlpha = 0
+
+# maximum error threshold in pixels
+threshold = 30
+
+# shift the video coordinate system
+sx = 250
+sy = 150
 # route specifies a series of coordinates that the robot will move to
-route = [(150,100),(150,350),(550,100),(550,350)]
-#route = [(300,100),(500,100),(500,350),(300,350)]
-#route = [(width/2, height/2)]
+route1 = [(0,0),(0,50),(0,100),(50,100),(100,100),(150,100),(200,100),(250,100),(300,100),(300,50),(300,100),(250,100),(200,100),(150,100),(100,100),(50,100)]
+route2 = [(0,0),(0,150),(300,150),(300,0)]
+route3 = [(0,0),(0,50)]
+center = [(width/2, height/2)]
+route = route2
 
 # currP stores the index of current coordinate in route
 currP = [0]
@@ -61,6 +71,7 @@ clientSocket.connect((serverName, serverPort))
 
 # go to point (dstx, dsty) on the video stream
 def goTo(rx, ry, bx, by, dstx, dsty, curr):
+    global prevAlpha
 
     #          |
     #     q2   |   q3
@@ -92,11 +103,12 @@ def goTo(rx, ry, bx, by, dstx, dsty, curr):
     # red-to-blue vector (x axis of robot coordinate system) in video coordinate system
     dx = bx-rx
     dy = by-ry
+    cv2.line(frame, (int(x),int(y)), (int(dstx),int(dsty)), (255, 255, 255))
 
     #cv2.circle(frame, (int(x), int(y)), int(math.sqrt((rx-bx)**2+(ry-by)**2)+rradius+bradius), (255, 255, 255), -1)
 
     # get the slope of the Red-to-Blue vector relative of x axis of video coordinate system
-    if dy != 0:
+    if dx != 0:
         slope = dy/dx
     else:
         slope = 100000
@@ -135,11 +147,14 @@ def goTo(rx, ry, bx, by, dstx, dsty, curr):
     # aka when less than 200 pixels away from destination
     # slow down the speed as the robot approaches the destination
     if math.hypot(x - dstx, y - dsty) < 200:
-        speedLimit = 50 * math.hypot(x - dstx, y - dsty) / 100
+        speedLimit = 10 + 40 * math.hypot(x - dstx, y - dsty) / 200
     # when more than 200 pixels away from destination
     # move at "full speed"
     else:
         speedLimit = 50
+
+    # setting a absolute speedLimit
+    #speedLimit = 20
 
     # when less than 20 pixels away form destination (in one of those cell of the final drawing)
     #if math.hypot(x - dstx, y - dsty) < 20:
@@ -163,7 +178,7 @@ def goTo(rx, ry, bx, by, dstx, dsty, curr):
 
     v02 = int((dstx-x)*math.cos(alpha)+(dsty-y)*math.sin(alpha))
     v13 = int(-(dstx-x)*math.sin(alpha)+(dsty-y)*math.cos(alpha))
-    print v02, v13, speedLimit, x, y
+    print (v02, v13), int(speedLimit), (int(x), int(y)), int(math.hypot(x - dstx, y - dsty))
     # considering a simple case where the (x,y) to (dstx, dsty) vector is at rq0, then
     # the motor0 should rotate counter-clockwise (-)
     # the motor1 should rotate counter-clockwise (-)
@@ -171,6 +186,12 @@ def goTo(rx, ry, bx, by, dstx, dsty, curr):
     # the motor3 should rotate clockwise (+)
     # note here clockwise/counter-clockwise is defined as the direction when you face the motor
     velocities = [-int(v02), -int(v13), int(v02), int(v13)]
+    #for i in range(len(velocities)):
+        #if math.hypot(x - dstx, y - dsty) < 200:
+        #    velocities[i] -= int(5*(alpha - prevAlpha)*math.hypot(x - dstx, y - dsty))
+        #else:
+    #        velocities[i] -= int(5*(alpha - prevAlpha))
+    #prevAlpha = alpha
 
     # finally, append speedLimit to the end of the velocities list
     # convert the list to string and then send to the robot
@@ -184,12 +205,15 @@ def goTo(rx, ry, bx, by, dstx, dsty, curr):
 
     # This part is to handle the route
     # when less than 30 pixels away from destination
-    if math.hypot(x - dstx, y - dsty) < 30:
+    if math.hypot(x - dstx, y - dsty) < threshold:
+        # pause 0.5 seconds for the robot to stop
+        clientSocket.send(str([0,0,0,0,0]))
+        stringFromServer = clientSocket.recv(1024)
+        time.sleep(0.5)
+
         # switch destination to the next point in route list
         if curr[0]+1 < len(route):
             curr[0] += 1
-            clientSocket.send(str([0,0,0,0,0]))
-            stringFromServer = clientSocket.recv(1024)
     #        print "+"
         # goes back to the first point if the route list is finished
         else:
@@ -259,11 +283,12 @@ while (camera.isOpened()):
                 cv2.circle(frame, bcenter, int(bradius), (255, 0, 0), -1)
 
     # go to the dstx and dstb
-    goTo(rx, ry, bx, by, route[currP[0]][0], route[currP[0]][1], currP)
+    #goTo(rx, ry, bx, by, route[currP[0]][0], route[currP[0]][1], currP)
+    goTo(rx, ry, bx, by, route[currP[0]][0]+sx, route[currP[0]][1]+sy, currP)
 
     # show the frame to our screen
     cv2.imshow("Frame", frame)
-    #out.write(frame) # write the video to a file
+    out.write(frame) # write the video to a file
     #cv2.imshow("Mask", mask)
     #cv2.imwrite( "frame.jpg", frame); 
     #cv2.imwrite( "rmask.jpg", rmask); 
