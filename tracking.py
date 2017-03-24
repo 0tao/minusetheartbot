@@ -92,7 +92,7 @@ for r in range(20):
             values.append(int((255-img[r,c])/30))
         else:
             route.append((6+(19-c)*canvash/20,6+r*canvasw/20))
-            values.append(255-img[r,19-c])
+            values.append(int((255-img[r,19-c])/30))
 print route
 print values
 
