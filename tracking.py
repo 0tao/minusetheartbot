@@ -35,7 +35,7 @@ debug = True
 # route specifies a series of coordinates that the robot will move to
 route = [(150,100),(150,350),(550,100),(550,350)]
 #route = [(300,100),(500,100),(500,350),(300,350)]
-route = [(width/2, height/2)]
+#route = [(width/2, height/2)]
 
 # currP stores the index of current coordinate in route
 currP = [0]
@@ -103,32 +103,32 @@ def goTo(rx, ry, bx, by, dstx, dsty, curr):
     
     # alpha is the rotation of  (red-to-blue vector / x axis in) robot coordinate system
     # relative to (x axis of) the video coordinate system, clockwise denotes positive
-    # 0 ≤ alpha ≤ 2π
+    # 0 <= alpha <= 2*pi
     alpha = abs(math.atan(slope))
     # adjusting alpha based on which quadrant the red-to-blue vector lies
     if dx > 0:
         if dy < 0:
-            # when the vector is at q3, adding the angle from q0 to q2, which is 3 * π/2
+            # when the vector is at q3, adding the angle from q0 to q2, which is 3 * pi/2
             alpha += 3*math.pi/2
     elif dx < 0:
         if dy > 0:
-            # when the vector is at q1, adding the angle of q0, which is π/2
+            # when the vector is at q1, adding the angle of q0, which is pi/2
             alpha += math.pi/2
         else:
             # when the vector is at either q2 (when dy < 0)
-            # adding the angle of q0 and q1, which is 2 * π/2 = π
+            # adding the angle of q0 and q1, which is 2 * pi/2 = pi
             # or when on video-x, between q1 and q2 (when dy == 0)
-            # alpha should be precisely π, but previous calculation
+            # alpha should be precisely pi, but previous calculation
             # should be alpha = abs(math.atan(slope)) == 0, so same
             alpha += math.pi
     else:   # dx == 0
         if dy > 0:
             # when the vector is on video-y, between q1 and q0
-            # alpha should be precisely π/2
+            # alpha should be precisely pi/2
             alpha = math.pi/2
         else: # dy < 0, note dy != 0 since dx == 0 and |vector| !=  0
             # when the vector is on video-y, between q2 and q3
-            # alpha should be precisely 3 * π/2
+            # alpha should be precisely 3 * pi/2
             alpha = 3*math.pi/2
 
     # when distance between (x,y) and (dstx, dsty) < 200 pixels
@@ -142,13 +142,13 @@ def goTo(rx, ry, bx, by, dstx, dsty, curr):
         speedLimit = 50
 
     # when less than 20 pixels away form destination (in one of those cell of the final drawing)
-    if math.hypot(x - dstx, y - dsty) < 20:
-        # pick random speed and GO
-        v03 = randint(-9,9)
-        v12 = randint(-9,9)
-        speedLimit = 30
+    #if math.hypot(x - dstx, y - dsty) < 20:
+    #    # pick random speed and GO
+    #    v03 = randint(-9,9)
+    #    v12 = randint(-9,9)
+    #    speedLimit = 30
     # when out of the cell, go towards the center of the destination
-    else:
+    #else:
         # this vector is denoted in robot coordinate system
         # by converting from (aka rotating) the video coordinate system
         # Equation (copied below) can be found on Wikipedia, Rotation of Axes: https://en.wikipedia.org/wiki/Rotation_of_axes
@@ -158,9 +158,11 @@ def goTo(rx, ry, bx, by, dstx, dsty, curr):
         # Here, since the red-to-blue vector (x axis of robot coordinate system)
         # is parallel to the actual motor0 and motor2 (rather than the motor0-motor2 vector)
         # therefore the new x' value is assigned to v02 and y' is assigned to v13
-        v02 = int((dstx-x)*math.cos(alpha)+(dsty-y)*math.sin(alpha))
-        v13 = int(-(dstx-x)*math.sin(alpha)+(dsty-y)*math.cos(alpha))
+    #    v02 = int((dstx-x)*math.cos(alpha)+(dsty-y)*math.sin(alpha))
+    #    v13 = int(-(dstx-x)*math.sin(alpha)+(dsty-y)*math.cos(alpha))
 
+    v02 = int((dstx-x)*math.cos(alpha)+(dsty-y)*math.sin(alpha))
+    v13 = int(-(dstx-x)*math.sin(alpha)+(dsty-y)*math.cos(alpha))
     print v02, v13, speedLimit, x, y
     # considering a simple case where the (x,y) to (dstx, dsty) vector is at rq0, then
     # the motor0 should rotate counter-clockwise (-)
@@ -182,14 +184,16 @@ def goTo(rx, ry, bx, by, dstx, dsty, curr):
 
     # This part is to handle the route
     # when less than 30 pixels away from destination
-    #if math.hypot(x - dstx, y - dsty) < 30:
+    if math.hypot(x - dstx, y - dsty) < 30:
         # switch destination to the next point in route list
-    #    if curr[0]+1 < len(route):
-    #        curr[0] += 1
+        if curr[0]+1 < len(route):
+            curr[0] += 1
+            clientSocket.send(str([0,0,0,0,0]))
+            stringFromServer = clientSocket.recv(1024)
     #        print "+"
         # goes back to the first point if the route list is finished
-    #    else:
-    #        curr[0] = 0
+        else:
+            curr[0] = 0
 
 
 while (camera.isOpened()):
