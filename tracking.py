@@ -52,7 +52,7 @@ height = 450
 prevAlpha = 0
 
 # maximum error threshold in pixels
-threshold = 10
+threshold = 5
 
 # shift the video coordinate system
 sx = 265
@@ -89,7 +89,7 @@ for r in range(20):
     for c in range(20):
         if (r%2==0):
             route.append((6+c*canvash/20,6+r*canvasw/20))
-            values.append(255-img[r,c])
+            values.append(int((255-img[r,c])/30))
         else:
             route.append((6+(19-c)*canvash/20,6+r*canvasw/20))
             values.append(255-img[r,19-c])
@@ -180,7 +180,7 @@ def goTo(rx, ry, bx, by, dstx, dsty, curr):
     # aka when less than 200 pixels away from destination
     # slow down the speed as the robot approaches the destination
     if math.hypot(x - dstx, y - dsty) < 200:
-        speedLimit = 20 + 30 * math.hypot(x - dstx, y - dsty) / 200
+        speedLimit = 10 + 30 * math.hypot(x - dstx, y - dsty) / 200
     # when more than 200 pixels away from destination
     # move at "full speed"
     else:
@@ -211,6 +211,31 @@ def goTo(rx, ry, bx, by, dstx, dsty, curr):
 
     v02 = int((dstx-x)*math.cos(alpha)+(dsty-y)*math.sin(alpha))
     v13 = int(-(dstx-x)*math.sin(alpha)+(dsty-y)*math.cos(alpha))
+
+    # This part is to handle the route
+    # when less than 30 pixels away from destination
+    if math.hypot(x - dstx, y - dsty) < threshold:
+        if not BOTLESS:
+            # pause 0.5 seconds for the robot to stop
+            clientSocket.send(str([0,0,0,0,0]))
+            stringFromServer = clientSocket.recv(1024)
+            time.sleep(0.1)
+
+        if values[curr[0]] == 0:
+            # switch destination to the next point in route list
+            if curr[0]+1 < len(route):
+                curr[0] += 1
+        #        print "+"
+            # goes back to the first point if the route list is finished
+            else:
+                curr[0] = 0
+        else:
+            values[curr[0]] -= 1
+            print values[curr[0]]
+            v02 = randint(-5,5)
+            v13 = randint(-5,5)
+            speedLimit = 20
+
     if DEBUG: print (v02, v13), int(speedLimit), (int(dstx-x), int(dsty-y)),(int(dx), int(dy)), int(math.hypot(x - dstx, y - dsty)), 2*alpha/math.pi
     # considering a simple case where the (x,y) to (dstx, dsty) vector is at rq0, then
     # the motor0 should rotate counter-clockwise (-)
@@ -238,24 +263,7 @@ def goTo(rx, ry, bx, by, dstx, dsty, curr):
             print "Server: "+stringFromServer
             print math.hypot(x - dstx, y - dsty),currP
 
-    # This part is to handle the route
-    # when less than 30 pixels away from destination
-    if math.hypot(x - dstx, y - dsty) < threshold:
-        if not BOTLESS:
-            # pause 0.5 seconds for the robot to stop
-            clientSocket.send(str([0,0,0,0,0]))
-            stringFromServer = clientSocket.recv(1024)
-            time.sleep(0.1)
-
-        # switch destination to the next point in route list
-        if curr[0]+1 < len(route):
-            curr[0] += 1
-    #        print "+"
-        # goes back to the first point if the route list is finished
-        else:
-            curr[0] = 0
-
-
+    
 while (camera.isOpened()):
 
     # read frame from the camera
