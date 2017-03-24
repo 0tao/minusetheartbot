@@ -32,7 +32,7 @@ MOTORS13_ADDR = 0x0a
 loopCount = 0
 
 if OLED:
-  if CONSOLE: print 'Initializing OLED ...'
+    if CONSOLE: print 'Initializing OLED ...'
     # initialize oled
     grove_oled.oled_init()
     grove_oled.oled_clearDisplay()
@@ -138,8 +138,8 @@ def main():
                                 print("-------------------- "+str(loopCount)+" --------------------")
                                 print("R: " + str(rotation))
                                 print("V: " + str([int(i) for i in velocities]))
-                                print("L: " + str(speedLimit)
-                                    loopCount += 1
+                                print("L: " + str(speedLimit))
+                                loopCount += 1
 
                         except:
                             if CONSOLE: print "Converting message Error: ", stringFromClient
