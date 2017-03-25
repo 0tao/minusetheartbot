@@ -1,16 +1,16 @@
 #!/usr/bin/env python
+from socket import *
+import sys     # exit
+import time    # sleep
+import subprocess # for calling shell script
+import argparse # argparse
 try:
-    from socket import *
-    import sys     # exit
-    import time    # sleep
-    import subprocess # for calling shell script
-    import argparse # argparse
     from lib import grovepi # grovepi
     from lib import grove_i2c_motor_driver
     from lib import grove_oled
 except ImportError as error:
     print "ImportError:", error.args[0]
-    sys.exit()
+    sys.exit(1)
 
 __author__ = "Jack B. Du (Jiadong Du)"
 __email__ = "jackbdu@nyu.edu"
@@ -99,7 +99,7 @@ def main():
         serverSocket.listen(1)
     except OverflowError as error:
         print "OverflowError:", error.args[0]
-        sys.exit()
+        sys.exit(1)
 
     if CONSOLE: print 'Starting up the server'
 
