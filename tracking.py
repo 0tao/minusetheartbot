@@ -43,12 +43,13 @@ bupper = (112, 255, 255)
 rlower = (160, 100, 100)
 rupper = (179, 255, 200)
 
-# initializing coordinates of red and blue markers
-rx, ry, bx, by = 0, 0, 1, 1
-
 # video width and height
 width = 800
 height = 450
+
+# initializing coordinates of red and blue markers
+rx, ry, bx, by = width/2-15, height/2, width/2+15, height/2
+virtualMarkers = [width/2-15, height/2, width/2+15, height/2]
 
 # shift from the video coordinate system to canvas coordinate system
 # a.k.a. the coordinate of top-left corner of canvas
@@ -133,6 +134,7 @@ if not BOTLESS:
 # go to point (dstx, dsty) on the video stream
 def goTo(rx, ry, bx, by, dstx, dsty, curr):
     global prevAlpha
+    global virtualMarkers
 
     #          |
     #     q2   |   q3
@@ -165,8 +167,6 @@ def goTo(rx, ry, bx, by, dstx, dsty, curr):
     dx = bx-rx
     dy = by-ry
     cv2.line(frame, (int(x),int(y)), (int(dstx),int(dsty)), (255, 255, 255))
-
-    #cv2.circle(frame, (int(x), int(y)), int(math.sqrt((rx-bx)**2+(ry-by)**2)+rradius+bradius), (255, 255, 255), -1)
 
     # get the slope of the Red-to-Blue vector relative of x axis of video coordinate system
     if dx != 0:
@@ -251,6 +251,9 @@ def goTo(rx, ry, bx, by, dstx, dsty, curr):
             v02 = randint(-5,5)
             v13 = randint(-5,5)
             speedLimit = 20
+            if BOTLESS:
+                dstx += v02*3
+                dsty += v13*3
 
     if DEBUG: print (v02, v13), int(speedLimit), (int(dstx-x), int(dsty-y)),(int(dx), int(dy)), int(math.hypot(x - dstx, y - dsty)), 2*alpha/math.pi
     # considering a simple case where the (x,y) to (dstx, dsty) vector is at rq0, then
@@ -267,7 +270,13 @@ def goTo(rx, ry, bx, by, dstx, dsty, curr):
     #        velocities[i] -= int(5*(alpha - prevAlpha))
     #prevAlpha = alpha
 
-    if not BOTLESS:
+    if BOTLESS:
+        print dx, dy
+        virtualMarkers[0] += int((dstx-x)*speedLimit/50)
+        virtualMarkers[1] += int((dsty-y)*speedLimit/50)
+        virtualMarkers[2] += int((dstx-x)*speedLimit/50)
+        virtualMarkers[3] += int((dsty-y)*speedLimit/50)
+    else:
         # finally, append speedLimit to the end of the velocities list
         # convert the list to string and then send to the robot
         # the string format would be "[v0, v1, v2, v3, sl]"
@@ -291,6 +300,18 @@ while (camera.isOpened()):
     frame = imutils.resize(frame, width=width)
 
     if BOTLESS:
+        rx = virtualMarkers[0]
+        ry = virtualMarkers[1]
+        bx = virtualMarkers[2]
+        by = virtualMarkers[3]
+        rradius = 6
+        bradius = 6
+        rcenter = (rx, ry)
+        bcenter = (bx, by)
+
+        # draw the robot
+        cv2.circle(frame, (int((bx+rx)/2), int((by+ry)/2)), int((math.sqrt((rx-bx)**2+(ry-by)**2)+rradius+bradius)/2), (0, 0, 0), -1)
+        cv2.circle(frame, (int((bx+rx)/2), int((by+ry)/2)), int((math.sqrt((rx-bx)**2+(ry-by)**2)+rradius+bradius)/2), (255, 255, 255), 1)
 
         cv2.circle(frame, (int(rx), int(ry)), int(rradius), (0, 255, 255), 2)
         cv2.circle(frame, rcenter, int(rradius), (0, 0, 255), -1)
@@ -340,7 +361,7 @@ while (camera.isOpened()):
                     #print rradius, rx, ry
                     # draw the circle and centroid on the frame,
                     cv2.circle(frame, (int(rx), int(ry)), int(rradius),
-                            (0, 255, 255), 2)
+                            (0, 255, 255), 1)
                     cv2.circle(frame, rcenter, int(rradius), (0, 0, 255), -1)
                     cv2.putText(frame, '3', rcenter, 0, 0.2, (255,255,255))
             bc = max(bcnts, key=cv2.contourArea)
@@ -354,7 +375,7 @@ while (camera.isOpened()):
                     #print bradius, bx, by
                     # draw the circle and centroid on the frame,
                     cv2.circle(frame, (int(bx), int(by)), int(bradius),
-                            (0, 255, 255), 2)
+                            (0, 255, 255), 1)
                     cv2.circle(frame, bcenter, int(bradius), (255, 0, 0), -1)
                     cv2.putText(frame, '1', bcenter, 0, 0.2, (255,255,255))
 
