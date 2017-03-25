@@ -4,9 +4,13 @@ import sys     # exit
 import time    # sleep
 import subprocess # for calling shell script
 import argparse # argparse
-from lib import grovepi # grovepi
-from lib import grove_i2c_motor_driver
-from lib import grove_oled
+try:
+    from lib import grovepi # grovepi
+    from lib import grove_i2c_motor_driver
+    from lib import grove_oled
+except ImportError as error:
+    print "ImportError:", error.args[0]
+    sys.exit()
 
 __author__ = "Jack B. Du (Jiadong Du)"
 __email__ = "jackbdu@nyu.edu"
@@ -28,33 +32,6 @@ BUZZER_PIN = 15
 # pin numbers for ultrasonic rangers # note D14 corresponds to A0
 MOTORS02_ADDR = 0x0f
 MOTORS13_ADDR = 0x0a
-
-loopCount = 0
-
-if OLED:
-    if CONSOLE: print 'Initializing OLED ...'
-    # initialize oled
-    grove_oled.oled_init()
-    grove_oled.oled_clearDisplay()
-    grove_oled.oled_setNormalDisplay()
-    grove_oled.oled_setVerticalMode()
-
-# initialize buzzer
-grovepi.pinMode(BUZZER_PIN,"OUTPUT")
-
-if CONSOLE: print 'Initializing server ...'
-# initialize socket
-serverPort = args.port
-serverSocket = socket(AF_INET,SOCK_STREAM)
-serverSocket.bind(('',serverPort))
-serverSocket.listen(1)
-
-if CONSOLE: print 'Starting up the server'
-
-# initialize velocities and speedLimit
-# the speedLimit specifies a hard max limit for all wheels
-velocities = [0, 0, 0, 0]
-speedLimit = 0
 
 # initalize motors and return two motor pairs, 02 and 13
 def initMotors():
@@ -95,6 +72,33 @@ def stop(motors):
     time.sleep(1)
 
 def main():
+
+    # initialize velocities and speedLimit
+    # the speedLimit specifies a hard max limit for all wheels
+    velocities = [0, 0, 0, 0]
+    speedLimit = 0
+    loopCount = 0
+
+    if OLED:
+        if CONSOLE: print 'Initializing OLED ...'
+        # initialize oled
+        grove_oled.oled_init()
+        grove_oled.oled_clearDisplay()
+        grove_oled.oled_setNormalDisplay()
+        grove_oled.oled_setVerticalMode()
+
+    # initialize buzzer
+    grovepi.pinMode(BUZZER_PIN,"OUTPUT")
+
+    if CONSOLE: print 'Initializing server ...'
+    # initialize socket
+    serverPort = args.port
+    serverSocket = socket(AF_INET,SOCK_STREAM)
+    serverSocket.bind(('',serverPort))
+    serverSocket.listen(1)
+
+    if CONSOLE: print 'Starting up the server'
+
     try:
         try:
             motors = initMotors()
@@ -155,6 +159,7 @@ def main():
                     stop(motors)
                     if CONSOLE: print("Closing the socket " + str(addr) + " ...")
                     connectionSocket.close()
+                    loopCount = 0
 
             except TypeError:
                 print ("TypeError")
@@ -164,6 +169,7 @@ def main():
                 print ("IOError")
             stop(motors)
             connectionSocket.close()
+            loopCount = 0
     except KeyboardInterrupt: # stop motors before exit
         if CONSOLE: print("Keyboard Interrput!")
         connectionSocket.close()
