@@ -1,10 +1,10 @@
 #!/usr/bin/env python
-from socket import *
-import sys     # exit
-import time    # sleep
-import subprocess # for calling shell script
-import argparse # argparse
 try:
+    from socket import *
+    import sys     # exit
+    import time    # sleep
+    import subprocess # for calling shell script
+    import argparse # argparse
     from lib import grovepi # grovepi
     from lib import grove_i2c_motor_driver
     from lib import grove_oled
