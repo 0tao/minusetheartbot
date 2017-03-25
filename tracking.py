@@ -83,10 +83,8 @@ route = [topLeft]
 # currP stores the index of current coordinate in route
 currP = [0]
 
-try:
-    # start opencv video capture with video0
-    camera = cv2.VideoCapture(0)
-except 
+# start opencv video capture with video0
+camera = cv2.VideoCapture(0)
 
 if IMAGE:
     # read reference image
