@@ -2,13 +2,17 @@
 # import the necessary packages
 import sys
 import time
-import numpy as np
-import imutils
-import cv2
 import math     # math.pi, math.sin, math.cos
 import argparse # argparse
 from socket import *
 from random import randint
+try:
+    import numpy as np
+    import imutils
+    import cv2
+except ImportError as error:
+    print "ImportError:", error.args[0]
+    sys.exit(1)
 
 __author__      = 'Jack B. Du (Jiadong Du)'
 __email__       = 'jackbdu@nyu.edu'
@@ -16,11 +20,12 @@ __copyright__   = 'Copyright 2017, Jack B. Du (Jiadong Du)'
 __license__     = 'Apache-2.0'
 __status__      = 'Development'
 
+# initialize argument parser
 parser = argparse.ArgumentParser(description="Minus E the Art Bot - Client")
-parser.add_argument('-p', '--preview', action='store_false', help="Toggle preview")
-parser.add_argument('-b', '--botless', action='store_true', help="Toggle botless")
-parser.add_argument('-d', '--debug', action='store_false', help="Toggle debug")
-parser.add_argument('-o', '--out', action='store_false', help="Toggle output")
+parser.add_argument('-p', '--preview',  action='store_false',   help="Toggle preview")
+parser.add_argument('-b', '--botless',  action='store_true',    help="Toggle botless")
+parser.add_argument('-d', '--debug',    action='store_false',   help="Toggle debug")
+parser.add_argument('-o', '--out',      action='store_false',   help="Toggle output")
 
 args = parser.parse_args()
 BOTLESS = args.botless
@@ -35,12 +40,6 @@ blower = (92, 100, 0)
 bupper = (112, 255, 255)
 rlower = (160, 100, 100)
 rupper = (179, 255, 200)
-#lower = (40, 100, 0)
-#upper = (85, 255, 255)
-#rlower = (0, 0, 0)
-#rupper = (10, 255, 255)
-#rlower = (160, 0, 0)
-#rupper = (179, 255, 255)
 
 # initializing coordinates of red and blue markers
 rx, ry, bx, by = 0, 0, 1, 1
@@ -49,23 +48,30 @@ rx, ry, bx, by = 0, 0, 1, 1
 width = 800
 height = 450
 
+# shift from the video coordinate system to canvas coordinate system
+# a.k.a. the coordinate of top-left corner of canvas
+sx = 265
+sy = 100
+
+# the size of the canvas
+canvasw = 240
+canvash = 240
+
+# test: previous alpha value
 prevAlpha = 0
 
 # maximum error threshold in pixels
 threshold = 10
 
-# shift the video coordinate system
-sx = 265
-sy = 100
 # route specifies a series of coordinates that the robot will move to
 center = [(width/2, height/2)]
+
+# a few routes for testing
 route1 = [(0,0),(0,50),(0,100),(50,100),(100,100),(150,100),(200,100),(250,100),(300,100),(300,50),(300,100),(250,100),(200,100),(150,100),(100,100),(50,100)]
 route2 = [(0,0),(0,150),(300,150),(300,0)]
 route3 = [(0,0),(0,50)]
 route4 = [(0,0),(0,50)]
 
-canvasw = 240
-canvash = 240
 topLeft = (0,0)
 topRight = (250,0)
 bottomLeft = (0,250)
@@ -75,8 +81,10 @@ route = [topLeft]
 # currP stores the index of current coordinate in route
 currP = [0]
 
-# start opencv video capture with video0
-camera = cv2.VideoCapture(0)
+try:
+    # start opencv video capture with video0
+    camera = cv2.VideoCapture(0)
+except 
 
 # read reference image
 img = cv2.imread('shirky.png', cv2.IMREAD_GRAYSCALE)
@@ -341,15 +349,17 @@ while (camera.isOpened()):
         #cv2.imwrite( "frame.jpg", frame); 
         #cv2.imwrite( "rmask.jpg", rmask); 
         #cv2.imwrite( "bmask.jpg", bmask); 
-    if OUT: out.write(frame) # write the video to a file
-    key = cv2.waitKey(1) & 0xFF
+    # add the frame to the video file
+    if OUT: out.write(frame) 
 
+    # handle key press in opencv window
+    key = cv2.waitKey(1) & 0xFF
     # if the 'q' key is pressed, stop the loop
     if key == ord("q"):
         break
 
 # closing stuff before exiting
-if not BOTLESS: clientSocket.close()
 camera.release()
+if not BOTLESS: clientSocket.close()
 if OUT: out.release()
 cv2.destroyAllWindows()
