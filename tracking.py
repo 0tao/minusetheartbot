@@ -81,6 +81,8 @@ bottomLeft = (0,250)
 bottomRight = (250,250)
 route = [topLeft]
 
+trace = []
+
 # currP stores the index of current coordinate in route
 currP = [0]
 
@@ -244,7 +246,10 @@ def goTo(rx, ry, bx, by, dstx, dsty, curr):
         #        print "+"
             # goes back to the first point if the route list is finished
             else:
-                curr[0] = 0
+                #curr[0] = 0
+                if BOTLESS:
+                    print trace
+                cv2.imwrite( "final.jpg", frame); 
         else:
             values[curr[0]] -= 1
             print values[curr[0]]
@@ -308,10 +313,16 @@ while (camera.isOpened()):
         bradius = 6
         rcenter = (rx, ry)
         bcenter = (bx, by)
+        x = (bx+rx)/2
+        y = (by+ry)/2
+        trace.append((x,y))
+        if len(trace) > 1:
+            for i in range(len(trace)-1):
+                cv2.line(frame, trace[i], trace[i+1], (0,0,0), 2)
 
         # draw the robot
-        cv2.circle(frame, (int((bx+rx)/2), int((by+ry)/2)), int((math.sqrt((rx-bx)**2+(ry-by)**2)+rradius+bradius)/2), (0, 0, 0), -1)
-        cv2.circle(frame, (int((bx+rx)/2), int((by+ry)/2)), int((math.sqrt((rx-bx)**2+(ry-by)**2)+rradius+bradius)/2), (255, 255, 255), 1)
+        cv2.circle(frame, (int(x), int(y)), int((math.sqrt((rx-bx)**2+(ry-by)**2)+rradius+bradius)/2), (0, 0, 0), -1)
+        cv2.circle(frame, (int(x), int(y)), int((math.sqrt((rx-bx)**2+(ry-by)**2)+rradius+bradius)/2), (255, 255, 255), 1)
 
         cv2.circle(frame, (int(rx), int(ry)), int(rradius), (0, 255, 255), 2)
         cv2.circle(frame, rcenter, int(rradius), (0, 0, 255), -1)
