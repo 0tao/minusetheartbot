@@ -52,7 +52,7 @@ height = 450
 prevAlpha = 0
 
 # maximum error threshold in pixels
-threshold = 5
+threshold = 10
 
 # shift the video coordinate system
 sx = 265
@@ -180,7 +180,7 @@ def goTo(rx, ry, bx, by, dstx, dsty, curr):
     # aka when less than 200 pixels away from destination
     # slow down the speed as the robot approaches the destination
     if math.hypot(x - dstx, y - dsty) < 200:
-        speedLimit = 10 + 30 * math.hypot(x - dstx, y - dsty) / 200
+        speedLimit = 15 + 30 * math.hypot(x - dstx, y - dsty) / 200
     # when more than 200 pixels away from destination
     # move at "full speed"
     else:
@@ -219,7 +219,7 @@ def goTo(rx, ry, bx, by, dstx, dsty, curr):
             # pause 0.5 seconds for the robot to stop
             clientSocket.send(str([0,0,0,0,0]))
             stringFromServer = clientSocket.recv(1024)
-            time.sleep(0.1)
+            #time.sleep(0.1)
 
         if values[curr[0]] == 0:
             # switch destination to the next point in route list
@@ -268,6 +268,7 @@ while (camera.isOpened()):
 
     # read frame from the camera
     _, frame = camera.read()
+    cv2.imwrite( "frame.jpg", frame); 
 
     # resize the frame, blur it, and convert it to the HSV
     # color space
