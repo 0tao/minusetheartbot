@@ -26,12 +26,14 @@ parser.add_argument('-p', '--preview',  action='store_false',   help="Toggle pre
 parser.add_argument('-b', '--botless',  action='store_true',    help="Toggle botless")
 parser.add_argument('-d', '--debug',    action='store_false',   help="Toggle debug")
 parser.add_argument('-o', '--out',      action='store_false',   help="Toggle output")
+parser.add_argument('-i', "--image", help="path to the reference image file")
 
 args = parser.parse_args()
 BOTLESS = args.botless
 PREVIEW = args.preview
 DEBUG   = args.debug
 OUT     = args.out
+IMAGE   = args.image
  
 # define the lower and upper boundaries of blue and red color of 
 # the balls/markers in the HSV color space
@@ -87,7 +89,7 @@ try:
 except 
 
 # read reference image
-img = cv2.imread('shirky.png', cv2.IMREAD_GRAYSCALE)
+img = cv2.imread(IMAGE, cv2.IMREAD_GRAYSCALE)
 img = cv2.resize(img,(20, 20), interpolation = cv2.INTER_CUBIC)
 #cv2.imwrite( "converted.png", img); 
 route = []
