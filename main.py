@@ -91,11 +91,15 @@ def main():
     grovepi.pinMode(BUZZER_PIN,"OUTPUT")
 
     if CONSOLE: print 'Initializing server ...'
-    # initialize socket
-    serverPort = args.port
-    serverSocket = socket(AF_INET,SOCK_STREAM)
-    serverSocket.bind(('',serverPort))
-    serverSocket.listen(1)
+    try:
+        # initialize socket
+        serverPort = args.port
+        serverSocket = socket(AF_INET,SOCK_STREAM)
+        serverSocket.bind(('',serverPort))
+        serverSocket.listen(1)
+    except OverflowError as error:
+        print "OverflowError:", error.args[0]
+        sys.exit()
 
     if CONSOLE: print 'Starting up the server'
 
