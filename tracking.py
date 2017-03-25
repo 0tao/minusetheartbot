@@ -88,23 +88,31 @@ try:
     camera = cv2.VideoCapture(0)
 except 
 
-# read reference image
-img = cv2.imread(IMAGE, cv2.IMREAD_GRAYSCALE)
-img = cv2.resize(img,(20, 20), interpolation = cv2.INTER_CUBIC)
-#cv2.imwrite( "converted.png", img); 
+if IMAGE:
+    # read reference image
+    img = cv2.imread(IMAGE, cv2.IMREAD_GRAYSCALE)
+    img = cv2.resize(img,(20, 20), interpolation = cv2.INTER_CUBIC)
+    cv2.imwrite(IMAGE+'_converted.png', img); 
+
 route = []
 values = []
 
-for r in range(20):
-    for c in range(20):
-        if (r%2==0):
-            route.append((6+c*canvash/20,6+r*canvasw/20))
-            values.append(int((255-img[r,c])/30))
-        else:
-            route.append((6+(19-c)*canvash/20,6+r*canvasw/20))
-            values.append(int((255-img[r,19-c])/30))
-print route
-print values
+if IMAGE:
+    for r in range(20):
+        for c in range(20):
+            if (r%2==0):
+                route.append((6+c*canvash/20,6+r*canvasw/20))
+                values.append(int((255-img[r,c])/30))
+            else:
+                route.append((6+(19-c)*canvash/20,6+r*canvasw/20))
+                values.append(int((255-img[r,19-c])/30))
+else:
+    route.append((6, 6))
+    values.append(0)
+
+if DEBUG:
+    print "Route:", route
+    print "Values:", values
 
 # getting the width and height of the video capture
 #width=int(camera.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH))
