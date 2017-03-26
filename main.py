@@ -160,7 +160,7 @@ def main():
                         if CONSOLE: print "Setting the velocities ..."
 
                         # set the velocities
-                        if setVelocities(motors, velocities, speedLimit)
+                        if setVelocities(motors, velocities, speedLimit):
                             if CONSOLE: print "Sending OK to client ..."
                             connectionSocket.send("OK")
                         else:
