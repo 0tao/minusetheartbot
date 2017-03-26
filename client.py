@@ -232,20 +232,20 @@ def goTo((rx, ry, bx, by), (dstx, dsty), curr):
             stringFromServer = clientSocket.recv(1024)
             #time.sleep(0.1)
 
-        if values[curr[0]] == 0:
+        if values[curr] == 0:
             # switch destination to the next point in route list
-            if curr[0]+1 < len(route):
-                curr[0] += 1
+            if curr+1 < len(route):
+                curr += 1
         #        print "+"
             # goes back to the first point if the route list is finished
             else:
-                #curr[0] = 0
+                #curr = 0
                 if BOTLESS:
                     print trace
                 cv2.imwrite( "final.jpg", frame); 
         else:
-            values[curr[0]] -= 1
-            print values[curr[0]]
+            values[curr] -= 1
+            print values[curr]
             v02 = randint(-5,5)
             v13 = randint(-5,5)
             speedLimit = 20
@@ -279,6 +279,8 @@ def goTo((rx, ry, bx, by), (dstx, dsty), curr):
         if DEBUG:
             print "Server: "+stringFromServer
             print math.hypot(x - dstx, y - dsty), currP
+
+    return curr
 
     
 # start opencv video capture with video0
