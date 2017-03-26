@@ -48,12 +48,15 @@ def setVelocities((motors02, motors13), velocities, speedLimit):
     directions02 = (1 if velocities[0] >= 0 else 2) * 4 + (1 if velocities[2] >= 0 else 2)
     directions13 = (1 if velocities[1] >= 0 else 2) * 4 + (1 if velocities[3] >= 0 else 2)
     limitSpeeds(velocities, speedLimit)
-    # set speeds
-    motors02.MotorSpeedSetAB(abs(velocities[2]), abs(velocities[0]))    #defines the speed of motor 0 and motor 2
-    motors13.MotorSpeedSetAB(abs(velocities[3]), abs(velocities[1]))    #defines the speed of motor 1 and motor 3
-    # set directions
-    motors02.MotorDirectionSet(directions02)
-    motors13.MotorDirectionSet(directions13)
+    try:
+        # set speeds
+        motors02.MotorSpeedSetAB(abs(velocities[2]), abs(velocities[0]))    #defines the speed of motor 0 and motor 2
+        motors13.MotorSpeedSetAB(abs(velocities[3]), abs(velocities[1]))    #defines the speed of motor 1 and motor 3
+        # set directions
+        motors02.MotorDirectionSet(directions02)
+        motors13.MotorDirectionSet(directions13)
+    except IOError:
+        print "IOError:", "Unable to find the motor driver, check the address and press reset on the motor driver and try again")
 
 # change the fastest speed to speedLimit and scale other speeds proportionally
 def limitSpeeds(velocities, speedLimit):
@@ -108,7 +111,7 @@ def main():
             motors = initMotors()
                 
         except IOError:
-            print("Unable to find the motor driver, check the addrees and press reset on the motor driver and try again")
+            print "IOError:", "Unable to find the motor driver, check the address and press reset on the motor driver and try again"
             
         while True:
             try:
@@ -138,13 +141,11 @@ def main():
                             if OLED:
                                 #display, note this may slow the robot reaction down
                                 grove_oled.oled_setTextXY(11,0)
-                                grove_oled.oled_putString("ROT:"+str(int(rotation)))
                                 for i in range(len(velocities)):
                                     grove_oled.oled_setTextXY(i,6)
                                     grove_oled.oled_putString(str(i)+":"+str(int(velocities[i])).zfill(4))
                             if CONSOLE:
                                 print("-------------------- "+str(loopCount)+" --------------------")
-                                print("R: " + str(rotation))
                                 print("V: " + str([int(i) for i in velocities]))
                                 print("L: " + str(speedLimit))
                                 loopCount += 1
