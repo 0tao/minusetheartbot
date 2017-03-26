@@ -28,7 +28,7 @@ parser.add_argument('-d', '--debug',    action='store_true',   help="Toggle debu
 parser.add_argument('-o', '--out',      action='store_true',   help="Toggle output")
 parser.add_argument('-r', '--resolution',   type=int, default=20,   help="Specify the resolution of the drawing")
 parser.add_argument('-m', '--margin',       type=int, default=6,    help="Specify the margin of the drawing")
-parser.add_argument('-d', "--depth",        type=int, default=64,   choices=[2,4,8,16,32,64,128,256], help="specify the color depth")
+parser.add_argument('-dp', "--depth",        type=int, default=64,   choices=[2,4,8,16,32,64,128,256], help="specify the color depth")
 parser.add_argument('-i', "--image", help="path to the reference image file")
 args = parser.parse_args()
 
