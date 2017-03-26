@@ -26,8 +26,10 @@ parser.add_argument('-p', '--preview',  action='store_true',   help="Toggle prev
 parser.add_argument('-b', '--botless',  action='store_true',   help="Toggle botless")
 parser.add_argument('-d', '--debug',    action='store_true',   help="Toggle debug")
 parser.add_argument('-o', '--out',      action='store_true',   help="Toggle output")
+parser.add_argument('-r', '--resolution',   type=int, default=20,   help="Specify the resolution of the drawing")
+parser.add_argument('-m', '--margin',       type=int, default=6,    help="Specify the margin of the drawing")
+parser.add_argument('-d', "--depth",        type=int, default=64,   choices=[2,4,8,16,32,64,128,256], help="specify the color depth")
 parser.add_argument('-i', "--image", help="path to the reference image file")
-parser.add_argument('-r', '--resolution', type=int, default=20, help="Specify the resolution of the drawing")
 args = parser.parse_args()
 
 BOTLESS = args.botless
@@ -35,7 +37,9 @@ PREVIEW = args.preview
 DEBUG   = args.debug
 OUT     = args.out
 IMAGE   = args.image
+MARGIN  = args.margin
 RES     = (args.resolution, args.resolution) # for now, assume it's square
+DEPTH   = args.depth
  
 # colors in BGR for convenience
 BLACK   = (0, 0, 0)
@@ -71,7 +75,10 @@ canvasSize = (240, 240)
 threshold = 10
 
 # currP stores the index of current coordinate in route
-currP = [0]
+currP = 0
+
+# maximum speed
+MAXSPEED = 60
 
 if IMAGE:
     # read reference image, resize and save it
@@ -85,16 +92,17 @@ values  = [] # values/darkness of pixels
 trace   = [] # trace of virtual bot, for displaying virtual drawing
 
 if IMAGE:
-    for r in range(20):
-        for c in range(20):
+    for r in range(RES[1]): # for each row
+        for c in range(RES[0]): # for each column
+            route.append((MARGIN+c*(canvasSize[1]-2*MARGIN)/RES[0],(MARGIN+r*canvasSize[0]-2*MARGIN)/RES[1]))
+            # even number of rows
             if (r%2==0):
-                route.append((6+c*canvasSize[1]/20,6+r*canvasSize[0]/20))
-                values.append(int((255-img[r,c])/15))
+                values.append(int((255-img[r,c])*DEPTH/256)-1)
+            # odd number of rows
             else:
-                route.append((6+(19-c)*canvasSize[1]/20,6+r*canvasSize[0]/20))
-                values.append(int((255-img[r,19-c])/15))
+                values.append(int((255-img[r,RES[0]-1-c])*DEPTH/256)-1)
 else:
-    route.append((6, 6))
+    route.append((MARGIN, MARGIN))
     values.append(0)
 
 if DEBUG:
@@ -147,13 +155,13 @@ def goTo((rx, ry, bx, by), (dstx, dsty), curr):
     #                      robot-y
 
     # coordinates of the robot center in video coordinate system
-    x = (markers[0]+bx)/2
-    y = (ry+by)/2
+    x, y = (rx+bx)/2, (ry+by)/2
 
     # red-to-blue vector (x axis of robot coordinate system) in video coordinate system
-    dx = bx-rx
-    dy = by-ry
-    cv2.line(frame, (int(x),int(y)), (int(dstx),int(dsty)), (255, 255, 255))
+    dx, dy = bx-rx, by-ry
+
+    # line from robot to dest
+    cv2.line(frame, (int(x),int(y)), (int(dstx),int(dsty)), WHITE)
 
     # get the slope of the Red-to-Blue vector relative of x axis of video coordinate system
     if dx != 0:
@@ -183,11 +191,11 @@ def goTo((rx, ry, bx, by), (dstx, dsty), curr):
     # aka when less than 200 pixels away from destination
     # slow down the speed as the robot approaches the destination
     if math.hypot(x - dstx, y - dsty) < 200:
-        speedLimit = 15 + 30 * math.hypot(x - dstx, y - dsty) / 200
+        speedLimit = MAXSPEED/4 + MAXSPEED/2 * math.hypot(x - dstx, y - dsty) / 200
     # when more than 200 pixels away from destination
     # move at "full speed"
     else:
-        speedLimit = 50
+        speedLimit = MAXSPEED
 
     # setting a absolute speedLimit
     #speedLimit = 20
@@ -381,7 +389,8 @@ while (camera.isOpened()):
 
     # go to the dstx and dstb
     #goTo(rx, ry, bx, by, route[currP[0]][0], route[currP[0]][1], currP)
-    goTo(markers, (route[currP[0]][0]+canvasShift[0], route[currP[0]][1]+canvasShift[1]), currP)
+    dst = (route[currP][0]+canvasShift[0], route[currP][1]+canvasShift[1])
+    currP = goTo(markers, dst, currP)
 
     # show the frame to our screen
     if PREVIEW:
