@@ -40,9 +40,9 @@ RES     = (args.resolution, args.resolution) # for now, assume it's square
 # colors in BGR for convenience
 BLACK   = (0, 0, 0)
 WHITE   = (255, 255, 255)
-RED     = (0, 255, 0)
 BLUE    = (255, 0, 0)
-BLUE    = (0, 255, 0)
+GREEN   = (0, 255, 0)
+RED     = (0, 0, 255)
 
 # define the lower and upper boundaries of blue and red color of 
 # the balls/markers in the HSV color space
