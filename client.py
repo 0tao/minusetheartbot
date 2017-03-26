@@ -27,6 +27,7 @@ parser.add_argument('-b', '--botless',  action='store_true',   help="Toggle botl
 parser.add_argument('-d', '--debug',    action='store_true',   help="Toggle debug")
 parser.add_argument('-o', '--out',      action='store_true',   help="Toggle output")
 parser.add_argument('-i', "--image", help="path to the reference image file")
+parser.add_argument('-r', '--resolution', type=int, default=20, help="Specify the resolution of the drawing")
 args = parser.parse_args()
 
 BOTLESS = args.botless
@@ -34,7 +35,15 @@ PREVIEW = args.preview
 DEBUG   = args.debug
 OUT     = args.out
 IMAGE   = args.image
+RES     = (args.resolution, arg.resolution) # for now, assume it's square
  
+# colors in BGR for convenience
+BLACK   = (0, 0, 0)
+WHITE   = (255, 255, 255)
+RED     = (0, 255, 0)
+BLUE    = (255, 0, 0)
+BLUE    = (0, 255, 0)
+
 # define the lower and upper boundaries of blue and red color of 
 # the balls/markers in the HSV color space
 # so far, this requires manual calibration depending on the light condition
@@ -52,56 +61,37 @@ canvasShift = (265, 82)
 
 # initializing coordinates of red and blue markers
 # [redX, redY, blueX, blueY]
-markers = [videoSize[0]/2-15, videoSize[1]/2, videoSize[0]/2+15, videoSize[1]/2]
+markers        = [canvasShift[0]-15, canvasShift[1], canvasShift[0]+15, canvasShift[1]]
 virtualMarkers = [canvasShift[0]-15, canvasShift[1], canvasShift[0]+15, canvasShift[1]]
 
 # the size of the canvas
-canvasw = 240
-canvash = 240
+canvasSize = (240, 240)
 
 # maximum error threshold in pixels
 threshold = 10
 
-# route specifies a series of coordinates that the robot will move to
-center = [(videoSize[0]/2, videoSize[1]/2)]
-
-# a few routes for testing
-route1 = [(0,0),(0,50),(0,100),(50,100),(100,100),(150,100),(200,100),(250,100),(300,100),(300,50),(300,100),(250,100),(200,100),(150,100),(100,100),(50,100)]
-route2 = [(0,0),(0,150),(300,150),(300,0)]
-route3 = [(0,0),(0,50)]
-route4 = [(0,0),(0,50)]
-
-topLeft = (0,0)
-topRight = (250,0)
-bottomLeft = (0,250)
-bottomRight = (250,250)
-route = [topLeft]
-
-trace = []
-
 # currP stores the index of current coordinate in route
 currP = [0]
 
-# start opencv video capture with video0
-camera = cv2.VideoCapture(0)
-
 if IMAGE:
-    # read reference image
+    # read reference image, resize and save it
     img = cv2.imread(IMAGE, cv2.IMREAD_GRAYSCALE)
-    img = cv2.resize(img,(20, 20), interpolation = cv2.INTER_CUBIC)
+    img = cv2.resize(img, RES, interpolation = cv2.INTER_CUBIC)
     cv2.imwrite(IMAGE+'_converted.png', img); 
 
-route = []
-values = []
+
+route   = [] # a route of coordinates
+values  = [] # values/darkness of pixels
+trace   = [] # trace of virtual bot, for displaying virtual drawing
 
 if IMAGE:
     for r in range(20):
         for c in range(20):
             if (r%2==0):
-                route.append((6+c*canvash/20,6+r*canvasw/20))
+                route.append((6+c*canvasSize[1]/20,6+r*canvasSize[0]/20))
                 values.append(int((255-img[r,c])/15))
             else:
-                route.append((6+(19-c)*canvash/20,6+r*canvasw/20))
+                route.append((6+(19-c)*canvasSize[1]/20,6+r*canvasSize[0]/20))
                 values.append(int((255-img[r,19-c])/15))
 else:
     route.append((6, 6))
@@ -283,17 +273,21 @@ def goTo((rx, ry, bx, by), (dstx, dsty), curr):
             print math.hypot(x - dstx, y - dsty), currP
 
     
+# start opencv video capture with video0
+camera = cv2.VideoCapture(0)
+
 while (camera.isOpened()):
 
     # read frame from the camera
     _, frame = camera.read()
     #cv2.imwrite( "frame.jpg", frame); 
 
-    # resize the frame, blur it, and convert it to the HSV
-    # color space
+    # resize the frame
     frame = imutils.resize(frame, width=videoSize[0])
 
+    # virtual bot simulation
     if BOTLESS:
+
         markers[0] = virtualMarkers[0]
         markers[1] = virtualMarkers[1]
         markers[2] = virtualMarkers[2]
@@ -304,25 +298,32 @@ while (camera.isOpened()):
         bcenter = (markers[2], markers[3])
         x = (markers[2]+markers[0])/2
         y = (markers[3]+markers[1])/2
+
+        # add the current virtual robot coordinate to trace
         trace.append((x,y))
+
+        # draw the trace on screen
         if len(trace) > 1:
             for i in range(len(trace)-1):
+                # draw line from every two points
                 cv2.line(frame, trace[i], trace[i+1], (0,0,0), 1)
 
         # draw the robot
-        cv2.circle(frame, (int(x), int(y)), int((math.sqrt((markers[0]-markers[2])**2+(markers[1]-markers[3])**2)+rradius+bradius)/2), (0, 0, 0), -1)
-        cv2.circle(frame, (int(x), int(y)), int((math.sqrt((markers[0]-markers[2])**2+(markers[1]-markers[3])**2)+rradius+bradius)/2), (255, 255, 255), 1)
+        cv2.circle(frame, (int(x), int(y)), int((math.sqrt((markers[0]-markers[2])**2+(markers[1]-markers[3])**2)+rradius+bradius)/2), BLACK, -1)
+        cv2.circle(frame, (int(x), int(y)), int((math.sqrt((markers[0]-markers[2])**2+(markers[1]-markers[3])**2)+rradius+bradius)/2), WHITE, 1)
 
-        cv2.circle(frame, (int(markers[0]), int(markers[1])), int(rradius), (0, 255, 255), 2)
-        cv2.circle(frame, rcenter, int(rradius), (0, 0, 255), -1)
-        cv2.putText(frame, '1', rcenter, 0, 0.2, (255,255,255))
+        # draw the red marker
+        cv2.circle(frame, rcenter, int(rradius), RED, -1)
+        cv2.circle(frame, (int(markers[0]), int(markers[1])), int(rradius), WHITE, 1)
+        cv2.putText(frame, '1', rcenter, 0, 0.2, WHITE)
 
-        cv2.circle(frame, (int(markers[2]), int(markers[3])), int(bradius), (0, 255, 255), 2)
-        cv2.circle(frame, bcenter, int(bradius), (255, 0, 0), -1)
-        cv2.putText(frame, '1', bcenter, 0, 0.2, (255,255,255))
+        # draw the blue marker
+        cv2.circle(frame, bcenter, int(bradius), BLUE, -1)
+        cv2.circle(frame, (int(markers[2]), int(markers[3])), int(bradius), WHITE, 1)
+        cv2.putText(frame, '1', bcenter, 0, 0.2, WHITE)
 
     else:
-
+        # blur the frame, and convert it to the HSV color space
         blurred = cv2.GaussianBlur(frame, (11, 11), 0)
         hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
 
@@ -352,6 +353,9 @@ while (camera.isOpened()):
             # centroid
             rc = max(rcnts, key=cv2.contourArea)
             ((markers[0], markers[1]), rradius) = cv2.minEnclosingCircle(rc)
+            bc = max(bcnts, key=cv2.contourArea)
+            ((markers[2], markers[3]), bradius) = cv2.minEnclosingCircle(bc)
+
             if DEBUG:
                 rM = cv2.moments(rc)
                 rcenter = (int(rM["m10"] / rM["m00"]), int(rM["m01"] / rM["m00"]))
@@ -360,12 +364,10 @@ while (camera.isOpened()):
                 if rradius > 0 and rradius < 50:
                     #print rradius, rx, ry
                     # draw the circle and centroid on the frame,
-                    cv2.circle(frame, rcenter, int(rradius), (0, 0, 255), -1)
-                    cv2.circle(frame, (int(markers[0]), int(markers[1])), int(rradius), (0, 255, 255), 1)
-                    cv2.putText(frame, '3', rcenter, 0, 0.2, (255,255,255))
-            bc = max(bcnts, key=cv2.contourArea)
-            ((markers[2], markers[3]), bradius) = cv2.minEnclosingCircle(bc)
-            if DEBUG:
+                    cv2.circle(frame, rcenter, int(rradius), RED, -1)
+                    cv2.circle(frame, (int(markers[0]), int(markers[1])), int(rradius), WHITE, 1)
+                    cv2.putText(frame, '3', rcenter, 0, 0.2, WHITE)
+
                 bM = cv2.moments(bc)
                 bcenter = (int(bM["m10"] / bM["m00"]), int(bM["m01"] / bM["m00"]))
 
@@ -373,9 +375,9 @@ while (camera.isOpened()):
                 if bradius > 0 and bradius < 50:
                     #print bradius, bx, by
                     # draw the circle and centroid on the frame,
-                    cv2.circle(frame, bcenter, int(bradius), (255, 0, 0), -1)
-                    cv2.circle(frame, (int(markers[2]), int(markers[3])), int(bradius), (0, 255, 255), 1)
-                    cv2.putText(frame, '1', bcenter, 0, 0.2, (255,255,255))
+                    cv2.circle(frame, bcenter, int(bradius), BLUE, -1)
+                    cv2.circle(frame, (int(markers[2]), int(markers[3])), int(bradius), WHITE, 1)
+                    cv2.putText(frame, '1', bcenter, 0, 0.2, WHITE)
 
     # go to the dstx and dstb
     #goTo(rx, ry, bx, by, route[currP[0]][0], route[currP[0]][1], currP)
