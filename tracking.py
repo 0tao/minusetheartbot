@@ -25,7 +25,7 @@ parser = argparse.ArgumentParser(description="Minus E the Art Bot - Client")
 parser.add_argument('-p', '--preview',  action='store_false',   help="Toggle preview")
 parser.add_argument('-b', '--botless',  action='store_true',    help="Toggle botless")
 parser.add_argument('-d', '--debug',    action='store_false',   help="Toggle debug")
-parser.add_argument('-o', '--out',      action='store_false',   help="Toggle output")
+parser.add_argument('-o', '--out',      action='store_true',   help="Toggle output")
 parser.add_argument('-i', "--image", help="path to the reference image file")
 
 args = parser.parse_args()
@@ -47,14 +47,14 @@ rupper = (179, 255, 200)
 width = 800
 height = 450
 
-# initializing coordinates of red and blue markers
-rx, ry, bx, by = width/2-15, height/2, width/2+15, height/2
-virtualMarkers = [width/2-15, height/2, width/2+15, height/2]
-
 # shift from the video coordinate system to canvas coordinate system
 # a.k.a. the coordinate of top-left corner of canvas
 sx = 265
-sy = 100
+sy = 82
+
+# initializing coordinates of red and blue markers
+rx, ry, bx, by = width/2-15, height/2, width/2+15, height/2
+virtualMarkers = [sx-15, sy, sx+15, sy]
 
 # the size of the canvas
 canvasw = 240
@@ -103,10 +103,10 @@ if IMAGE:
         for c in range(20):
             if (r%2==0):
                 route.append((6+c*canvash/20,6+r*canvasw/20))
-                values.append(int((255-img[r,c])/30))
+                values.append(int((255-img[r,c])/15))
             else:
                 route.append((6+(19-c)*canvash/20,6+r*canvasw/20))
-                values.append(int((255-img[r,19-c])/30))
+                values.append(int((255-img[r,19-c])/15))
 else:
     route.append((6, 6))
     values.append(0)
@@ -291,14 +291,14 @@ def goTo(rx, ry, bx, by, dstx, dsty, curr):
         stringFromServer = clientSocket.recv(1024)
         if DEBUG:
             print "Server: "+stringFromServer
-            print math.hypot(x - dstx, y - dsty),currP
+            print math.hypot(x - dstx, y - dsty), currP
 
     
 while (camera.isOpened()):
 
     # read frame from the camera
     _, frame = camera.read()
-    cv2.imwrite( "frame.jpg", frame); 
+    #cv2.imwrite( "frame.jpg", frame); 
 
     # resize the frame, blur it, and convert it to the HSV
     # color space
@@ -318,7 +318,7 @@ while (camera.isOpened()):
         trace.append((x,y))
         if len(trace) > 1:
             for i in range(len(trace)-1):
-                cv2.line(frame, trace[i], trace[i+1], (0,0,0), 2)
+                cv2.line(frame, trace[i], trace[i+1], (0,0,0), 1)
 
         # draw the robot
         cv2.circle(frame, (int(x), int(y)), int((math.sqrt((rx-bx)**2+(ry-by)**2)+rradius+bradius)/2), (0, 0, 0), -1)
@@ -371,9 +371,8 @@ while (camera.isOpened()):
                 if rradius > 0 and rradius < 50:
                     #print rradius, rx, ry
                     # draw the circle and centroid on the frame,
-                    cv2.circle(frame, (int(rx), int(ry)), int(rradius),
-                            (0, 255, 255), 1)
                     cv2.circle(frame, rcenter, int(rradius), (0, 0, 255), -1)
+                    cv2.circle(frame, (int(rx), int(ry)), int(rradius), (0, 255, 255), 1)
                     cv2.putText(frame, '3', rcenter, 0, 0.2, (255,255,255))
             bc = max(bcnts, key=cv2.contourArea)
             ((bx, by), bradius) = cv2.minEnclosingCircle(bc)
@@ -385,9 +384,8 @@ while (camera.isOpened()):
                 if bradius > 0 and bradius < 50:
                     #print bradius, bx, by
                     # draw the circle and centroid on the frame,
-                    cv2.circle(frame, (int(bx), int(by)), int(bradius),
-                            (0, 255, 255), 1)
                     cv2.circle(frame, bcenter, int(bradius), (255, 0, 0), -1)
+                    cv2.circle(frame, (int(bx), int(by)), int(bradius), (0, 255, 255), 1)
                     cv2.putText(frame, '1', bcenter, 0, 0.2, (255,255,255))
 
     # go to the dstx and dstb
