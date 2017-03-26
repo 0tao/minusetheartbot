@@ -35,7 +35,7 @@ PREVIEW = args.preview
 DEBUG   = args.debug
 OUT     = args.out
 IMAGE   = args.image
-RES     = (args.resolution, arg.resolution) # for now, assume it's square
+RES     = (args.resolution, args.resolution) # for now, assume it's square
  
 # colors in BGR for convenience
 BLACK   = (0, 0, 0)
