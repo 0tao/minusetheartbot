@@ -48,12 +48,19 @@ def setVelocities((motors02, motors13), velocities, speedLimit):
     directions02 = (1 if velocities[0] >= 0 else 2) * 4 + (1 if velocities[2] >= 0 else 2)
     directions13 = (1 if velocities[1] >= 0 else 2) * 4 + (1 if velocities[3] >= 0 else 2)
     limitSpeeds(velocities, speedLimit)
-    # set speeds
-    motors02.MotorSpeedSetAB(abs(velocities[2]), abs(velocities[0]))    #defines the speed of motor 0 and motor 2
-    motors13.MotorSpeedSetAB(abs(velocities[3]), abs(velocities[1]))    #defines the speed of motor 1 and motor 3
-    # set directions
-    motors02.MotorDirectionSet(directions02)
-    motors13.MotorDirectionSet(directions13)
+    try:
+        # set speeds
+        motors02.MotorSpeedSetAB(abs(velocities[2]), abs(velocities[0]))    #defines the speed of motor 0 and motor 2
+        motors13.MotorSpeedSetAB(abs(velocities[3]), abs(velocities[1]))    #defines the speed of motor 1 and motor 3
+        # set directions
+        motors02.MotorDirectionSet(directions02)
+        motors13.MotorDirectionSet(directions13)
+    except IOError:
+        if CONSOLE:
+            print "IOError:", "Unable to find the motor driver, check the address and press reset on the motor driver and try again"
+        return 1
+
+    return 0
 
 # change the fastest speed to speedLimit and scale other speeds proportionally
 def limitSpeeds(velocities, speedLimit):
@@ -151,20 +158,14 @@ def main():
                             if CONSOLE: print "Converting message Error: ", stringFromClient
 
                         if CONSOLE: print "Setting the velocities ..."
-                        try:
-                            # set the velocities
-                            setVelocities(motors, velocities, speedLimit)
+
+                        # set the velocities
+                        if setVelocities(motors, velocities, speedLimit)
                             if CONSOLE: print "Sending OK to client ..."
                             connectionSocket.send("OK")
-
-                        except IOError:
-                            if CONSOLE:
-                                print "IOError:", "Unable to find the motor driver, check the address and press reset on the motor driver and try again"
-                                print "Sending BAD to client ..."
-                            connectionSocket.send("BAD: Unable to find the motor driver, check the address and press reset on the motor driver and try again")
-                        except Exception as error:
+                        else:
                             if CONSOLE: print "Sending BAD to client ..."
-                            connectionSocket.send("BAD: "+error.args[0]+" "+error.args[1])
+                            connectionSocket.send("BAD")
 
                     if CONSOLE: print("Disconnected to " + str(addr) + "!")
                     stop(motors)
@@ -177,7 +178,7 @@ def main():
                 grovepi.digitalWrite(BUZZER_PIN,1)
                 subprocess.call(['./lib/avrdude_test.sh'])
             except IOError as error:
-                print "IOError:", error.args[0], error.args[1]
+                print "IOError:", error.args[1]
             stop(motors)
             connectionSocket.close()
             loopCount = 0
