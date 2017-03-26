@@ -22,13 +22,13 @@ __status__      = 'Development'
 
 # initialize argument parser
 parser = argparse.ArgumentParser(description="Minus E the Art Bot - Client")
-parser.add_argument('-p', '--preview',  action='store_false',   help="Toggle preview")
-parser.add_argument('-b', '--botless',  action='store_true',    help="Toggle botless")
-parser.add_argument('-d', '--debug',    action='store_false',   help="Toggle debug")
+parser.add_argument('-p', '--preview',  action='store_true',   help="Toggle preview")
+parser.add_argument('-b', '--botless',  action='store_true',   help="Toggle botless")
+parser.add_argument('-d', '--debug',    action='store_true',   help="Toggle debug")
 parser.add_argument('-o', '--out',      action='store_true',   help="Toggle output")
 parser.add_argument('-i', "--image", help="path to the reference image file")
-
 args = parser.parse_args()
+
 BOTLESS = args.botless
 PREVIEW = args.preview
 DEBUG   = args.debug
@@ -44,30 +44,26 @@ rlower = (160, 100, 100)
 rupper = (179, 255, 200)
 
 # video width and height
-width = 800
-height = 450
+videoSize = (800, 450)
 
 # shift from the video coordinate system to canvas coordinate system
 # a.k.a. the coordinate of top-left corner of canvas
-sx = 265
-sy = 82
+canvasShift = (265, 82)
 
 # initializing coordinates of red and blue markers
-rx, ry, bx, by = width/2-15, height/2, width/2+15, height/2
-virtualMarkers = [sx-15, sy, sx+15, sy]
+# [redX, redY, blueX, blueY]
+markers = [videoSize[0]/2-15, videoSize[1]/2, videoSize[0]/2+15, videoSize[1]/2]
+virtualMarkers = [canvasShift[0]-15, canvasShift[1], canvasShift[0]+15, canvasShift[1]]
 
 # the size of the canvas
 canvasw = 240
 canvash = 240
 
-# test: previous alpha value
-prevAlpha = 0
-
 # maximum error threshold in pixels
 threshold = 10
 
 # route specifies a series of coordinates that the robot will move to
-center = [(width/2, height/2)]
+center = [(videoSize[0]/2, videoSize[1]/2)]
 
 # a few routes for testing
 route1 = [(0,0),(0,50),(0,100),(50,100),(100,100),(150,100),(200,100),(250,100),(300,100),(300,50),(300,100),(250,100),(200,100),(150,100),(100,100),(50,100)]
@@ -124,7 +120,7 @@ if DEBUG:
 fourcc = cv2.cv.CV_FOURCC('m','p','4','v')
 if OUT:
     out = cv2.VideoWriter()
-    out.open('output.mp4', fourcc, 20, (width,height))
+    out.open('output.mp4', fourcc, 20, videoSize)
 
 if not BOTLESS:
     # initialize tcp connection
@@ -134,8 +130,7 @@ if not BOTLESS:
     clientSocket.connect((serverName, serverPort))
 
 # go to point (dstx, dsty) on the video stream
-def goTo(rx, ry, bx, by, dstx, dsty, curr):
-    global prevAlpha
+def goTo((rx, ry, bx, by), (dstx, dsty), curr):
     global virtualMarkers
 
     #          |
@@ -162,7 +157,7 @@ def goTo(rx, ry, bx, by, dstx, dsty, curr):
     #                      robot-y
 
     # coordinates of the robot center in video coordinate system
-    x = (rx+bx)/2
+    x = (markers[0]+bx)/2
     y = (ry+by)/2
 
     # red-to-blue vector (x axis of robot coordinate system) in video coordinate system
@@ -268,12 +263,6 @@ def goTo(rx, ry, bx, by, dstx, dsty, curr):
     # the motor3 should rotate clockwise (+)
     # note here clockwise/counter-clockwise is defined as the direction when you face the motor
     velocities = [-int(v02), -int(v13), int(v02), int(v13)]
-    #for i in range(len(velocities)):
-        #if math.hypot(x - dstx, y - dsty) < 200:
-        #    velocities[i] -= int(5*(alpha - prevAlpha)*math.hypot(x - dstx, y - dsty))
-        #else:
-    #        velocities[i] -= int(5*(alpha - prevAlpha))
-    #prevAlpha = alpha
 
     if BOTLESS:
         print dx, dy
@@ -302,33 +291,33 @@ while (camera.isOpened()):
 
     # resize the frame, blur it, and convert it to the HSV
     # color space
-    frame = imutils.resize(frame, width=width)
+    frame = imutils.resize(frame, width=videoSize[0])
 
     if BOTLESS:
-        rx = virtualMarkers[0]
-        ry = virtualMarkers[1]
-        bx = virtualMarkers[2]
-        by = virtualMarkers[3]
+        markers[0] = virtualMarkers[0]
+        markers[1] = virtualMarkers[1]
+        markers[2] = virtualMarkers[2]
+        markers[3] = virtualMarkers[3]
         rradius = 6
         bradius = 6
-        rcenter = (rx, ry)
-        bcenter = (bx, by)
-        x = (bx+rx)/2
-        y = (by+ry)/2
+        rcenter = (markers[0], markers[1])
+        bcenter = (markers[2], markers[3])
+        x = (markers[2]+markers[0])/2
+        y = (markers[3]+markers[1])/2
         trace.append((x,y))
         if len(trace) > 1:
             for i in range(len(trace)-1):
                 cv2.line(frame, trace[i], trace[i+1], (0,0,0), 1)
 
         # draw the robot
-        cv2.circle(frame, (int(x), int(y)), int((math.sqrt((rx-bx)**2+(ry-by)**2)+rradius+bradius)/2), (0, 0, 0), -1)
-        cv2.circle(frame, (int(x), int(y)), int((math.sqrt((rx-bx)**2+(ry-by)**2)+rradius+bradius)/2), (255, 255, 255), 1)
+        cv2.circle(frame, (int(x), int(y)), int((math.sqrt((markers[0]-markers[2])**2+(markers[1]-markers[3])**2)+rradius+bradius)/2), (0, 0, 0), -1)
+        cv2.circle(frame, (int(x), int(y)), int((math.sqrt((markers[0]-markers[2])**2+(markers[1]-markers[3])**2)+rradius+bradius)/2), (255, 255, 255), 1)
 
-        cv2.circle(frame, (int(rx), int(ry)), int(rradius), (0, 255, 255), 2)
+        cv2.circle(frame, (int(markers[0]), int(markers[1])), int(rradius), (0, 255, 255), 2)
         cv2.circle(frame, rcenter, int(rradius), (0, 0, 255), -1)
         cv2.putText(frame, '1', rcenter, 0, 0.2, (255,255,255))
 
-        cv2.circle(frame, (int(bx), int(by)), int(bradius), (0, 255, 255), 2)
+        cv2.circle(frame, (int(markers[2]), int(markers[3])), int(bradius), (0, 255, 255), 2)
         cv2.circle(frame, bcenter, int(bradius), (255, 0, 0), -1)
         cv2.putText(frame, '1', bcenter, 0, 0.2, (255,255,255))
 
@@ -362,7 +351,7 @@ while (camera.isOpened()):
             # it to compute the minimum enclosing circle and
             # centroid
             rc = max(rcnts, key=cv2.contourArea)
-            ((rx, ry), rradius) = cv2.minEnclosingCircle(rc)
+            ((markers[0], markers[1]), rradius) = cv2.minEnclosingCircle(rc)
             if DEBUG:
                 rM = cv2.moments(rc)
                 rcenter = (int(rM["m10"] / rM["m00"]), int(rM["m01"] / rM["m00"]))
@@ -372,10 +361,10 @@ while (camera.isOpened()):
                     #print rradius, rx, ry
                     # draw the circle and centroid on the frame,
                     cv2.circle(frame, rcenter, int(rradius), (0, 0, 255), -1)
-                    cv2.circle(frame, (int(rx), int(ry)), int(rradius), (0, 255, 255), 1)
+                    cv2.circle(frame, (int(markers[0]), int(markers[1])), int(rradius), (0, 255, 255), 1)
                     cv2.putText(frame, '3', rcenter, 0, 0.2, (255,255,255))
             bc = max(bcnts, key=cv2.contourArea)
-            ((bx, by), bradius) = cv2.minEnclosingCircle(bc)
+            ((markers[2], markers[3]), bradius) = cv2.minEnclosingCircle(bc)
             if DEBUG:
                 bM = cv2.moments(bc)
                 bcenter = (int(bM["m10"] / bM["m00"]), int(bM["m01"] / bM["m00"]))
@@ -385,12 +374,12 @@ while (camera.isOpened()):
                     #print bradius, bx, by
                     # draw the circle and centroid on the frame,
                     cv2.circle(frame, bcenter, int(bradius), (255, 0, 0), -1)
-                    cv2.circle(frame, (int(bx), int(by)), int(bradius), (0, 255, 255), 1)
+                    cv2.circle(frame, (int(markers[2]), int(markers[3])), int(bradius), (0, 255, 255), 1)
                     cv2.putText(frame, '1', bcenter, 0, 0.2, (255,255,255))
 
     # go to the dstx and dstb
     #goTo(rx, ry, bx, by, route[currP[0]][0], route[currP[0]][1], currP)
-    goTo(rx, ry, bx, by, route[currP[0]][0]+sx, route[currP[0]][1]+sy, currP)
+    goTo(markers, (route[currP[0]][0]+canvasShift[0], route[currP[0]][1]+canvasShift[1]), currP)
 
     # show the frame to our screen
     if PREVIEW:
