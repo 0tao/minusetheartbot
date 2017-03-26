@@ -179,6 +179,7 @@ def main():
                 subprocess.call(['./lib/avrdude_test.sh'])
             except IOError as error:
                 print "IOError:", error.args[1]
+                if CONSOLE: print("Disconnected to " + str(addr) + "!")
             stop(motors)
             connectionSocket.close()
             loopCount = 0
