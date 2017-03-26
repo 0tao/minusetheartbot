@@ -161,11 +161,11 @@ def main():
 
                         # set the velocities
                         if setVelocities(motors, velocities, speedLimit):
-                            if CONSOLE: print "Sending OK to client ..."
-                            connectionSocket.send("OK")
-                        else:
                             if CONSOLE: print "Sending BAD to client ..."
                             connectionSocket.send("BAD")
+                        else:
+                            if CONSOLE: print "Sending OK to client ..."
+                            connectionSocket.send("OK")
 
                     if CONSOLE: print("Disconnected to " + str(addr) + "!")
                     stop(motors)
