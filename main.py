@@ -56,7 +56,7 @@ def setVelocities((motors02, motors13), velocities, speedLimit):
         motors02.MotorDirectionSet(directions02)
         motors13.MotorDirectionSet(directions13)
     except IOError:
-        print "IOError:", "Unable to find the motor driver, check the address and press reset on the motor driver and try again")
+        print "IOError:", "Unable to find the motor driver, check the address and press reset on the motor driver and try again"
 
 # change the fastest speed to speedLimit and scale other speeds proportionally
 def limitSpeeds(velocities, speedLimit):
