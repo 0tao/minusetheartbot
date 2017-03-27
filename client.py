@@ -61,7 +61,7 @@ videoSize = (800, 450)
 
 # shift from the video coordinate system to canvas coordinate system
 # a.k.a. the coordinate of top-left corner of canvas
-canvasShift = (265, 82)
+canvasShift = (265, 105)
 
 # initializing coordinates of red and blue markers
 # [redX, redY, blueX, blueY]
@@ -69,12 +69,13 @@ markers        = [canvasShift[0]-15, canvasShift[1], canvasShift[0]+15, canvasSh
 virtualMarkers = [canvasShift[0]-15, canvasShift[1], canvasShift[0]+15, canvasShift[1]]
 
 # the size of the canvas
-canvasSize = (240, 240)
+canvasSize = (260, 260)
 
 # maximum error threshold in pixels
 threshold = 10
 
 # currP stores the index of current coordinate in route
+#currP = 0
 currP = 0
 
 # maximum speed
@@ -94,13 +95,14 @@ trace   = [] # trace of virtual bot, for displaying virtual drawing
 if IMAGE:
     for r in range(RES[1]): # for each row
         for c in range(RES[0]): # for each column
-            route.append((MARGIN+c*(canvasSize[1]-2*MARGIN)/RES[0],(MARGIN+r*canvasSize[0]-2*MARGIN)/RES[1]))
             # even number of rows
             if (r%2==0):
-                values.append(int((255-img[r,c])*DEPTH/256)-1)
+                route.append((c*canvasSize[1]/RES[0],r*canvasSize[0]/RES[1]))
+                values.append(int((255-img[r,c])*DEPTH/256))
             # odd number of rows
             else:
-                values.append(int((255-img[r,RES[0]-1-c])*DEPTH/256)-1)
+                route.append(((RES[0]-1-c)*canvasSize[1]/RES[0],r*canvasSize[0]/RES[1]))
+                values.append(int((255-img[r,RES[0]-1-c])*DEPTH/256))
 else:
     route.append((MARGIN, MARGIN))
     values.append(0)
@@ -243,6 +245,7 @@ def goTo((rx, ry, bx, by), (dstx, dsty), curr):
                 if BOTLESS:
                     print trace
                 cv2.imwrite( "final.jpg", frame); 
+                
         else:
             values[curr] -= 1
             v02 = randint(-5,5)
@@ -286,12 +289,13 @@ def goTo((rx, ry, bx, by), (dstx, dsty), curr):
     
 # start opencv video capture with video0
 camera = cv2.VideoCapture(1)
+#camera.set(cv2.CAP_PROP_AUTOFOCUS, 0)
 
 while (camera.isOpened()):
 
     # read frame from the camera
     _, frame = camera.read()
-    #cv2.imwrite( "frame.jpg", frame); 
+    cv2.imwrite( "iframe.jpg", frame); 
 
     # resize the frame
     frame = imutils.resize(frame, width=videoSize[0])
@@ -400,7 +404,7 @@ while (camera.isOpened()):
         #cv2.imshow("Red Mask", rmask)
         #cv2.imshow("Blue Mask", bmask)
         cv2.imshow("Frame", frame)
-        #cv2.imwrite( "frame.jpg", frame); 
+        cv2.imwrite( "frame.jpg", frame); 
         #cv2.imwrite( "rmask.jpg", rmask); 
         #cv2.imwrite( "bmask.jpg", bmask); 
     # add the frame to the video file
