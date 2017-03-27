@@ -245,7 +245,6 @@ def goTo((rx, ry, bx, by), (dstx, dsty), curr):
                 cv2.imwrite( "final.jpg", frame); 
         else:
             values[curr] -= 1
-            print values[curr]
             v02 = randint(-5,5)
             v13 = randint(-5,5)
             speedLimit = 20
@@ -253,7 +252,10 @@ def goTo((rx, ry, bx, by), (dstx, dsty), curr):
                 dstx += v02*3
                 dsty += v13*3
 
-    if DEBUG: print (v02, v13), int(speedLimit), (int(dstx-x), int(dsty-y)),(int(dx), int(dy)), int(math.hypot(x - dstx, y - dsty)), 2*alpha/math.pi
+    if DEBUG:
+        print "Velocities:", (v02, v13), int(speedLimit)
+        print "Dist to Dest:", int(math.hypot(x - dstx, y - dsty))
+        print "Current Point:", curr, "Current Value:", values[curr]
     # considering a simple case where the (x,y) to (dstx, dsty) vector is at rq0, then
     # the motor0 should rotate counter-clockwise (-)
     # the motor1 should rotate counter-clockwise (-)
@@ -263,7 +265,6 @@ def goTo((rx, ry, bx, by), (dstx, dsty), curr):
     velocities = [-int(v02), -int(v13), int(v02), int(v13)]
 
     if BOTLESS:
-        print dx, dy
         virtualMarkers[0] += int((dstx-x)*speedLimit/50)
         virtualMarkers[1] += int((dsty-y)*speedLimit/50)
         virtualMarkers[2] += int((dstx-x)*speedLimit/50)
@@ -284,7 +285,7 @@ def goTo((rx, ry, bx, by), (dstx, dsty), curr):
 
     
 # start opencv video capture with video0
-camera = cv2.VideoCapture(0)
+camera = cv2.VideoCapture(1)
 
 while (camera.isOpened()):
 
