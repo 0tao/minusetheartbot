@@ -27,9 +27,9 @@ parser.add_argument('-b', '--botless',  action='store_true',   help="Toggle botl
 parser.add_argument('-d', '--debug',    action='store_true',   help="Toggle debug")
 parser.add_argument('-o', '--out',      action='store_true',   help="Toggle output")
 parser.add_argument('-r', '--resolution',   type=int, default=20,   help="Specify the resolution of the drawing")
-parser.add_argument('-m', '--margin',       type=int, default=25,   help="Specify the margin of the drawing")
-parser.add_argument('-dp', "--depth",       type=int, default=64,   choices=[2,4,8,16,32,64,128,256], help="specify the color depth")
-parser.add_argument('-i', "--image", help="path to the reference image file")
+parser.add_argument('-m', '--margin',       type=int, default=20,   help="Specify the margin of the drawing")
+parser.add_argument('-dp', '--depth',       type=int, default=64,   choices=[2,4,8,16,32,64,128,256], help="specify the color depth")
+parser.add_argument('-i', '--image', help="path to the reference image file")
 args = parser.parse_args()
 
 BOTLESS = args.botless
@@ -72,7 +72,7 @@ virtualMarkers = [canvasShift[0]-15, canvasShift[1], canvasShift[0]+15, canvasSh
 canvasSize = (300-2*MARGIN, 300-2*MARGIN)
 
 # maximum error threshold in pixels
-threshold = canvasSize[0]/RES[0]/2
+threshold = (canvasSize[0]-MARGIN*2)/RES[0]/2
 
 # currIndex stores the index of current coordinate in route
 currIndex = 0
@@ -96,21 +96,21 @@ if IMAGE:
         for c in range(RES[0]): # for each column
             # even number of rows
             if (r%2==0):
-                route.append((MARGIN+c*canvasSize[1]/RES[0],
-                              MARGIN+r*canvasSize[0]/RES[1]))
+                route.append((MARGIN+c*canvasSize[1]/(RES[0]-1),
+                              MARGIN+r*canvasSize[0]/(RES[1]-1)))
                 values.append(int((255-img[r,c])*DEPTH/256))
             # odd number of rows
             else:
-                route.append((MARGIN+(RES[0]-1-c)*canvasSize[1]/RES[0],
-                              MARGIN+r*canvasSize[0]/RES[1]))
+                route.append((MARGIN+(RES[0]-1-c)*canvasSize[1]/(RES[0]-1),
+                              MARGIN+r*canvasSize[0]/(RES[1]-1)))
                 values.append(int((255-img[r,RES[0]-1-c])*DEPTH/256))
 else:
     route.append((MARGIN, MARGIN))
     values.append(0)
 
 if DEBUG:
-    print "Route:", route
-    print "Values:", values
+    print "  Route:", route
+    print " Values:", values
 
 # getting the width and height of the video capture
 #width=int(camera.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH))
@@ -284,7 +284,7 @@ def goTo((rx, ry, bx, by), (dstx, dsty), curr):
 
     
 # start opencv video capture with video0
-camera = cv2.VideoCapture(1)
+camera = cv2.VideoCapture(0)
 #camera.set(cv2.CAP_PROP_AUTOFOCUS, 0)
 
 while (camera.isOpened()):
@@ -295,12 +295,10 @@ while (camera.isOpened()):
     # resize the frame
     frame = imutils.resize(fullFrame, width=videoSize[0])
     if DEBUG:
-        for c in range(res[0]+1):
-            cv2.line(frame, (MARGIN-threshold+threshold*2*c, MARGIN-threshold),
-                            (MARGIN-threshold+threshold*2*c, canvasSize[1]-MARGIN+threshold), trace[i+1], WHITE, 1)
-        for r in range(res[1]+1):
-            cv2.line(frame, (MARGIN-threshold, MARGIN-threshold+threshold*2*r),
-                            (canvasSize[0]-MARGIN-threshold, MARGIN-threshold+threshold*2*r), WHITE, 1)
+        for c in range(RES[0]):
+            cv2.line(frame, (route[c][0]+canvasShift[0], route[0][1]+canvasShift[1]), (route[c][0]+canvasShift[0], route[-1][1]+canvasShift[1]), WHITE, 1)
+        for r in range(RES[1]):
+            cv2.line(frame, (route[0][0]+canvasShift[0], route[r*RES[0]][1]+canvasShift[1]), (route[RES[0]-1][0]+canvasShift[0], route[r*RES[0]][1]+canvasShift[1]), WHITE, 1)
 
     # virtual bot simulation
     if BOTLESS:
