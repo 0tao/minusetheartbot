@@ -27,8 +27,8 @@ parser.add_argument('-b', '--botless',  action='store_true',   help="Toggle botl
 parser.add_argument('-d', '--debug',    action='store_true',   help="Toggle debug")
 parser.add_argument('-o', '--out',      action='store_true',   help="Toggle output")
 parser.add_argument('-r', '--resolution',   type=int, default=20,   help="Specify the resolution of the drawing")
-parser.add_argument('-m', '--margin',       type=int, default=25,    help="Specify the margin of the drawing")
-parser.add_argument('-dp', "--depth",        type=int, default=64,   choices=[2,4,8,16,32,64,128,256], help="specify the color depth")
+parser.add_argument('-m', '--margin',       type=int, default=25,   help="Specify the margin of the drawing")
+parser.add_argument('-dp', "--depth",       type=int, default=64,   choices=[2,4,8,16,32,64,128,256], help="specify the color depth")
 parser.add_argument('-i', "--image", help="path to the reference image file")
 args = parser.parse_args()
 
@@ -115,13 +115,6 @@ if DEBUG:
 # getting the width and height of the video capture
 #width=int(camera.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH))
 #height=int(camera.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))
-
-# initialize video output info
-# codec for video output, works fine on macOS
-fourcc = cv2.cv.CV_FOURCC('m','p','4','v')
-if OUT:
-    out = cv2.VideoWriter()
-    out.open('output.mp4', fourcc, 20, videoSize)
 
 if not BOTLESS:
     # initialize tcp connection
@@ -235,7 +228,9 @@ def goTo((rx, ry, bx, by), (dstx, dsty), curr):
             stringFromServer = clientSocket.recv(1024)
             #time.sleep(0.1)
 
-        if values[curr] == 0:
+        if values[curr] <= 0:
+            # add the frame to the video file
+            if OUT: cv2.imwrite("timelapse/"+IMAGE+"_"+curr.zfill(len(str(len(route)))+1)+".jpg", fullFrame);
             # switch destination to the next point in route list
             if curr+1 < len(route):
                 curr += 1
@@ -294,11 +289,10 @@ camera = cv2.VideoCapture(1)
 while (camera.isOpened()):
 
     # read frame from the camera
-    _, frame = camera.read()
-    cv2.imwrite( "iframe.jpg", frame); 
+    _, fullFrame = camera.read()
 
     # resize the frame
-    frame = imutils.resize(frame, width=videoSize[0])
+    frame = imutils.resize(fullFrame, width=videoSize[0])
 
     # virtual bot simulation
     if BOTLESS:
@@ -407,8 +401,6 @@ while (camera.isOpened()):
         cv2.imwrite( "frame.jpg", frame); 
         #cv2.imwrite( "rmask.jpg", rmask); 
         #cv2.imwrite( "bmask.jpg", bmask); 
-    # add the frame to the video file
-    if OUT: out.write(frame) 
 
     # handle key press in opencv window
     key = cv2.waitKey(1) & 0xFF
@@ -419,5 +411,4 @@ while (camera.isOpened()):
 # closing stuff before exiting
 camera.release()
 if not BOTLESS: clientSocket.close()
-if OUT: out.release()
 cv2.destroyAllWindows()
