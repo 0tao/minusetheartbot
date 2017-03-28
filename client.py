@@ -28,7 +28,7 @@ parser.add_argument('-d', '--debug',    action='store_true',   help="Toggle debu
 parser.add_argument('-o', '--out',      action='store_true',   help="Toggle output")
 parser.add_argument('-r', '--resolution',   type=int, default=20,   help="Specify the resolution of the drawing")
 parser.add_argument('-m', '--margin',       type=int, default=20,   help="Specify the margin of the drawing")
-parser.add_argument('-dp', '--depth',       type=int, default=64,   choices=[2,4,8,16,32,64,128,256], help="specify the color depth")
+parser.add_argument('-dp', '--depth',       type=int, default=64,   choices=[0,2,4,8,16,32,64,128,256], help="specify the color depth")
 parser.add_argument('-i', '--image', help="path to the reference image file")
 args = parser.parse_args()
 
@@ -61,7 +61,7 @@ videoSize = (800, 450)
 
 # shift from the video coordinate system to canvas coordinate system
 # a.k.a. the coordinate of top-left corner of canvas
-canvasShift = (265, 105)
+canvasShift = (240, 80)
 
 # initializing coordinates of red and blue markers
 # [redX, redY, blueX, blueY]
@@ -284,7 +284,7 @@ def goTo((rx, ry, bx, by), (dstx, dsty), curr):
 
     
 # start opencv video capture with video0
-camera = cv2.VideoCapture(0)
+camera = cv2.VideoCapture(1)
 #camera.set(cv2.CAP_PROP_AUTOFOCUS, 0)
 
 while (camera.isOpened()):
@@ -294,11 +294,6 @@ while (camera.isOpened()):
 
     # resize the frame
     frame = imutils.resize(fullFrame, width=videoSize[0])
-    if DEBUG:
-        for c in range(RES[0]):
-            cv2.line(frame, (route[c][0]+canvasShift[0], route[0][1]+canvasShift[1]), (route[c][0]+canvasShift[0], route[-1][1]+canvasShift[1]), WHITE, 1)
-        for r in range(RES[1]):
-            cv2.line(frame, (route[0][0]+canvasShift[0], route[r*RES[0]][1]+canvasShift[1]), (route[RES[0]-1][0]+canvasShift[0], route[r*RES[0]][1]+canvasShift[1]), WHITE, 1)
 
     # virtual bot simulation
     if BOTLESS:
@@ -398,6 +393,13 @@ while (camera.isOpened()):
     #goTo(rx, ry, bx, by, route[currIndex[0]][0], route[currIndex[0]][1], currIndex)
     dst = (route[currIndex][0]+canvasShift[0], route[currIndex][1]+canvasShift[1])
     currIndex = goTo(markers, dst, currIndex)
+
+    # the grid is drawn at the end so as not to affect the tracking
+    if DEBUG:
+        for c in range(RES[0]):
+            cv2.line(frame, (route[c][0]+canvasShift[0], route[0][1]+canvasShift[1]), (route[c][0]+canvasShift[0], route[-1][1]+canvasShift[1]), WHITE, 1)
+        for r in range(RES[1]):
+            cv2.line(frame, (route[0][0]+canvasShift[0], route[r*RES[0]][1]+canvasShift[1]), (route[RES[0]-1][0]+canvasShift[0], route[r*RES[0]][1]+canvasShift[1]), WHITE, 1)
 
     # show the frame to our screen
     if PREVIEW:
