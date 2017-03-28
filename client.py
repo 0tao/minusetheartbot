@@ -27,7 +27,7 @@ parser.add_argument('-b', '--botless',  action='store_true',   help="Toggle botl
 parser.add_argument('-d', '--debug',    action='store_true',   help="Toggle debug")
 parser.add_argument('-o', '--out',      action='store_true',   help="Toggle output")
 parser.add_argument('-r', '--resolution',   type=int, default=20,   help="Specify the resolution of the drawing")
-parser.add_argument('-m', '--margin',       type=int, default=6,    help="Specify the margin of the drawing")
+parser.add_argument('-m', '--margin',       type=int, default=25,    help="Specify the margin of the drawing")
 parser.add_argument('-dp', "--depth",        type=int, default=64,   choices=[2,4,8,16,32,64,128,256], help="specify the color depth")
 parser.add_argument('-i', "--image", help="path to the reference image file")
 args = parser.parse_args()
@@ -69,14 +69,13 @@ markers        = [canvasShift[0]-15, canvasShift[1], canvasShift[0]+15, canvasSh
 virtualMarkers = [canvasShift[0]-15, canvasShift[1], canvasShift[0]+15, canvasShift[1]]
 
 # the size of the canvas
-canvasSize = (260, 260)
+canvasSize = (300-2*MARGIN, 300-2*MARGIN)
 
 # maximum error threshold in pixels
-threshold = 10
+threshold = canvasSize[0]/RES[0]/2
 
-# currP stores the index of current coordinate in route
-#currP = 0
-currP = 0
+# currIndex stores the index of current coordinate in route
+currIndex = 0
 
 # maximum speed
 MAXSPEED = 60
@@ -97,11 +96,13 @@ if IMAGE:
         for c in range(RES[0]): # for each column
             # even number of rows
             if (r%2==0):
-                route.append((c*canvasSize[1]/RES[0],r*canvasSize[0]/RES[1]))
+                route.append((MARGIN+c*canvasSize[1]/RES[0],
+                              MARGIN+r*canvasSize[0]/RES[1]))
                 values.append(int((255-img[r,c])*DEPTH/256))
             # odd number of rows
             else:
-                route.append(((RES[0]-1-c)*canvasSize[1]/RES[0],r*canvasSize[0]/RES[1]))
+                route.append((MARGIN+(RES[0]-1-c)*canvasSize[1]/RES[0],
+                              MARGIN+r*canvasSize[0]/RES[1]))
                 values.append(int((255-img[r,RES[0]-1-c])*DEPTH/256))
 else:
     route.append((MARGIN, MARGIN))
@@ -226,7 +227,7 @@ def goTo((rx, ry, bx, by), (dstx, dsty), curr):
     v13 = int(-(dstx-x)*math.sin(alpha)+(dsty-y)*math.cos(alpha))
 
     # This part is to handle the route
-    # when less than 30 pixels away from destination
+    # when less than threshold pixels away from destination
     if math.hypot(x - dstx, y - dsty) < threshold:
         if not BOTLESS:
             # pause 0.5 seconds for the robot to stop
@@ -242,9 +243,8 @@ def goTo((rx, ry, bx, by), (dstx, dsty), curr):
             # goes back to the first point if the route list is finished
             else:
                 #curr = 0
-                if BOTLESS:
-                    print trace
-                cv2.imwrite( "final.jpg", frame); 
+                if BOTLESS: print trace
+                if IMAGE: cv2.imwrite( IMAGE+"_final.jpg", frame); 
                 
         else:
             values[curr] -= 1
@@ -282,7 +282,7 @@ def goTo((rx, ry, bx, by), (dstx, dsty), curr):
         stringFromServer = clientSocket.recv(1024)
         if DEBUG:
             print "Server: "+stringFromServer
-            print math.hypot(x - dstx, y - dsty), currP
+            print math.hypot(x - dstx, y - dsty), currIndex
 
     return curr
 
@@ -395,9 +395,9 @@ while (camera.isOpened()):
                     cv2.putText(frame, '1', bcenter, 0, 0.2, WHITE)
 
     # go to the dstx and dstb
-    #goTo(rx, ry, bx, by, route[currP[0]][0], route[currP[0]][1], currP)
-    dst = (route[currP][0]+canvasShift[0], route[currP][1]+canvasShift[1])
-    currP = goTo(markers, dst, currP)
+    #goTo(rx, ry, bx, by, route[currIndex[0]][0], route[currIndex[0]][1], currIndex)
+    dst = (route[currIndex][0]+canvasShift[0], route[currIndex][1]+canvasShift[1])
+    currIndex = goTo(markers, dst, currIndex)
 
     # show the frame to our screen
     if PREVIEW:
