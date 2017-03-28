@@ -26,7 +26,7 @@ parser.add_argument('-d', '--debug', action='store_true', help="Toggle debugging
 args = parser.parse_args()
 
 OLED = args.oled
-CONSOLE = args.debug
+DEBUG = args.debug
 
 BUZZER_PIN = 15
 # pin numbers for ultrasonic rangers # note D14 corresponds to A0
@@ -35,7 +35,7 @@ MOTORS13_ADDR = 0x0a
 
 # initalize motors and return two motor pairs, 02 and 13
 def initMotors():
-    if CONSOLE: print("Initializeing motors ...")
+    if DEBUG: print("Initializeing motors ...")
     # motor driver addresses accordingly
     motors02 = grove_i2c_motor_driver.motor_driver(address=MOTORS02_ADDR)
     motors13 = grove_i2c_motor_driver.motor_driver(address=MOTORS13_ADDR)
@@ -43,7 +43,7 @@ def initMotors():
 
 # set the velocities of the motors with the speedLimit as the fastest speed allowed
 def setVelocities((motors02, motors13), velocities, speedLimit):
-    if CONSOLE: print("Setting velocities ...")
+    if DEBUG: print("Setting velocities ...")
     # get directions from the velocities
     directions02 = (1 if velocities[0] >= 0 else 2) * 4 + (1 if velocities[2] >= 0 else 2)
     directions13 = (1 if velocities[1] >= 0 else 2) * 4 + (1 if velocities[3] >= 0 else 2)
@@ -56,7 +56,7 @@ def setVelocities((motors02, motors13), velocities, speedLimit):
         motors02.MotorDirectionSet(directions02)
         motors13.MotorDirectionSet(directions13)
     except IOError:
-        if CONSOLE:
+        if DEBUG:
             print "IOError:", "Unable to find the motor driver, check the address and press reset on the motor driver and try again"
         return 1
 
@@ -64,7 +64,7 @@ def setVelocities((motors02, motors13), velocities, speedLimit):
 
 # change the fastest speed to speedLimit and scale other speeds proportionally
 def limitSpeeds(velocities, speedLimit):
-    if CONSOLE: print("Limiting speed ...")
+    if DEBUG: print("Limiting speed ...")
     speedLimit += 0.0
     maxSpeed = max(abs(max(velocities)), abs(min(velocities)))
     if maxSpeed > 0:
@@ -73,7 +73,7 @@ def limitSpeeds(velocities, speedLimit):
 
 # stop motors
 def stop(motors):
-    if CONSOLE: print("Stopping motors ...")
+    if DEBUG: print("Stopping motors ...")
     #STOP
     setVelocities(motors, [0,0,0,0], 0);
     time.sleep(1)
@@ -87,7 +87,7 @@ def main():
     loopCount = 0
 
     if OLED:
-        if CONSOLE: print 'Initializing OLED ...'
+        if DEBUG: print 'Initializing OLED ...'
         # initialize oled
         grove_oled.oled_init()
         grove_oled.oled_clearDisplay()
@@ -97,7 +97,7 @@ def main():
     # initialize buzzer
     grovepi.pinMode(BUZZER_PIN,"OUTPUT")
 
-    if CONSOLE: print 'Initializing server ...'
+    if DEBUG: print 'Initializing server ...'
     try:
         # initialize socket
         serverPort = args.port
@@ -108,7 +108,7 @@ def main():
         print "OverflowError:", error.args[0]
         sys.exit(1)
 
-    if CONSOLE: print 'Starting up the server'
+    if DEBUG: print 'Starting up the server'
 
     try:
         try:
@@ -122,16 +122,16 @@ def main():
                 time.sleep(0.01)
 
                 while True:
-                    if CONSOLE: print("Waiting for connection ...")
+                    if DEBUG: print("Waiting for connection ...")
                     # listening for connection
                     connectionSocket, addr = serverSocket.accept()
 
-                    if CONSOLE: print("Connected to " + str(addr) + " ...")
+                    if DEBUG: print("Connected to " + str(addr) + " ...")
                     connected = True
                     while connected:
-                        if CONSOLE: print("Waiting for message ...")
+                        if DEBUG: print("Waiting for message ...")
                         stringFromClient = connectionSocket.recv(1024)
-                        if CONSOLE: print "Message received: ", stringFromClient
+                        if DEBUG: print "Message received: ", stringFromClient
 
                         try: 
                             # converting string to int list
@@ -148,28 +148,28 @@ def main():
                                 for i in range(len(velocities)):
                                     grove_oled.oled_setTextXY(i,6)
                                     grove_oled.oled_putString(str(i)+":"+str(int(velocities[i])).zfill(4))
-                            if CONSOLE:
+                            if DEBUG:
                                 print("-------------------- "+str(loopCount)+" --------------------")
                                 print("V: " + str([int(i) for i in velocities]))
                                 print("L: " + str(speedLimit))
                                 loopCount += 1
 
                         except:
-                            if CONSOLE: print "Converting message Error: ", stringFromClient
+                            if DEBUG: print "Converting message Error: ", stringFromClient
 
-                        if CONSOLE: print "Setting the velocities ..."
+                        if DEBUG: print "Setting the velocities ..."
 
                         # set the velocities
                         if setVelocities(motors, velocities, speedLimit):
-                            if CONSOLE: print "Sending BAD to client ..."
+                            if DEBUG: print "Sending BAD to client ..."
                             connectionSocket.send("BAD")
                         else:
-                            if CONSOLE: print "Sending OK to client ..."
+                            if DEBUG: print "Sending OK to client ..."
                             connectionSocket.send("OK")
 
-                    if CONSOLE: print("Disconnected to " + str(addr) + "!")
+                    if DEBUG: print("Disconnected to " + str(addr) + "!")
                     stop(motors)
-                    if CONSOLE: print("Closing the socket " + str(addr) + " ...")
+                    if DEBUG: print("Closing the socket " + str(addr) + " ...")
                     connectionSocket.close()
                     loopCount = 0
 
@@ -179,12 +179,12 @@ def main():
                 subprocess.call(['./lib/avrdude_test.sh'])
             except IOError as error:
                 print "IOError:", error.args[1]
-                if CONSOLE: print("Disconnected to " + str(addr) + "!")
+                if DEBUG: print("Disconnected to " + str(addr) + "!")
             stop(motors)
             connectionSocket.close()
             loopCount = 0
     except KeyboardInterrupt: # stop motors before exit
-        if CONSOLE: print("Keyboard Interrput!")
+        if DEBUG: print("Keyboard Interrput!")
         connectionSocket.close()
         grovepi.digitalWrite(BUZZER_PIN,0)
         stop(motors)
