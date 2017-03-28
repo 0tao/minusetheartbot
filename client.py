@@ -251,9 +251,10 @@ def goTo((rx, ry, bx, by), (dstx, dsty), curr):
                 dsty += v13*3
 
     if DEBUG:
-        print "Velocities:", (v02, v13), int(speedLimit)
-        print "Dist to Dest:", int(math.hypot(x - dstx, y - dsty))
-        print "Current Point:", curr, "Current Value:", values[curr]
+        print "    Velocities:", (v02, v13), int(speedLimit)
+        print "  Dist to Dest:", int(math.hypot(x - dstx, y - dsty))
+        print " Current Point:", curr
+        print " Current Value:", values[curr]
     # considering a simple case where the (x,y) to (dstx, dsty) vector is at rq0, then
     # the motor0 should rotate counter-clockwise (-)
     # the motor1 should rotate counter-clockwise (-)
@@ -293,6 +294,13 @@ while (camera.isOpened()):
 
     # resize the frame
     frame = imutils.resize(fullFrame, width=videoSize[0])
+    if DEBUG:
+        for c in range(res[0]+1):
+            cv2.line(frame, (MARGIN-threshold+threshold*2*c, MARGIN-threshold),
+                            (MARGIN-threshold+threshold*2*c, canvasSize[1]-MARGIN+threshold), trace[i+1], WHITE, 1)
+        for r in range(res[1]+1):
+            cv2.line(frame, (MARGIN-threshold, MARGIN-threshold+threshold*2*r),
+                            (canvasSize[0]-MARGIN-threshold, MARGIN-threshold+threshold*2*r), WHITE, 1)
 
     # virtual bot simulation
     if BOTLESS:
@@ -315,7 +323,7 @@ while (camera.isOpened()):
         if len(trace) > 1:
             for i in range(len(trace)-1):
                 # draw line from every two points
-                cv2.line(frame, trace[i], trace[i+1], (0,0,0), 1)
+                cv2.line(frame, trace[i], trace[i+1], BLACK, 1)
 
         # draw the robot
         cv2.circle(frame, (int(x), int(y)), int((math.sqrt((markers[0]-markers[2])**2+(markers[1]-markers[3])**2)+rradius+bradius)/2), BLACK, -1)
@@ -398,7 +406,7 @@ while (camera.isOpened()):
         #cv2.imshow("Red Mask", rmask)
         #cv2.imshow("Blue Mask", bmask)
         cv2.imshow("Frame", frame)
-        cv2.imwrite( "frame.jpg", frame); 
+        #cv2.imwrite( "frame.jpg", frame); 
         #cv2.imwrite( "rmask.jpg", rmask); 
         #cv2.imwrite( "bmask.jpg", bmask); 
 
