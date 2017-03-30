@@ -66,15 +66,17 @@ videoSize = (800, 450)
 
 # shift from the video coordinate system to canvas coordinate system
 # a.k.a. the coordinate of top-left corner of canvas
-canvasShift = (240, 80)
+cropShift = (200, 40)
+canvasShift = (MARGIN, MARGIN)
 
 # initializing coordinates of red and blue markers
 # [redX, redY, blueX, blueY]
 markers        = [canvasShift[0]-15, canvasShift[1], canvasShift[0]+15, canvasShift[1]]
 virtualMarkers = [canvasShift[0]-15, canvasShift[1], canvasShift[0]+15, canvasShift[1]]
 
-# the size of the canvas
-canvasSize = (300-2*MARGIN, 300-2*MARGIN)
+# the exact size of the canvas/paper
+canvasSize = (300, 300)
+canvasSize = (canvasSize[0]-2*MARGIN, canvasSize[1]-2*MARGIN)
 
 # maximum error threshold in pixels
 threshold = (canvasSize[0]-MARGIN*2)/RES[0]/2
@@ -303,6 +305,8 @@ while (camera.isOpened()):
 
     # resize the frame
     frame = imutils.resize(fullFrame, width=videoSize[0])
+    
+    frame = frame[cropShift[1]:cropShift[1]+canvasSize[1]+MARGIN*4, cropShift[0]:cropShift[0]+canvasSize[0]+MARGIN*4]
 
     # virtual bot simulation
     if BOTLESS:
