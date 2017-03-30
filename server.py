@@ -174,17 +174,19 @@ def main():
                     loopCount = 0
 
             except TypeError:
-                print ("TypeError")
+                if DEBUG:
+                    print ("TypeError")
                 grovepi.digitalWrite(BUZZER_PIN,1)
                 subprocess.call(['./lib/avrdude_test.sh'])
             except IOError as error:
-                print "IOError:", error.args[1]
-                if DEBUG: print("Disconnected to " + str(addr) + "!")
+                if DEBUG:
+                    print "IOError:", error.args[1]
+                    print("Disconnected to " + str(addr) + "!")
             stop(motors)
             connectionSocket.close()
             loopCount = 0
     except KeyboardInterrupt: # stop motors before exit
-        if DEBUG: print("Keyboard Interrput!")
+        print("Keyboard Interrput!")
         connectionSocket.close()
         grovepi.digitalWrite(BUZZER_PIN,0)
         stop(motors)
