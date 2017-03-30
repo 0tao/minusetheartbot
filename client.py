@@ -29,6 +29,7 @@ parser.add_argument('-d', '--debug',    action='store_true',   help="Toggle debu
 parser.add_argument('-o', '--out',      action='store_true',   help="Toggle output")
 parser.add_argument('-r', '--resolution',   type=int, default=20,   help="Specify the resolution of the drawing")
 parser.add_argument('-m', '--margin',       type=int, default=20,   help="Specify the margin of the drawing")
+parser.add_argument('-id', '--index',       type=int, default=0,    help="specify the initial index")
 parser.add_argument('-dp', '--depth',       type=int, default=64,   choices=[0,2,4,8,16,32,64,128,256], help="specify the color depth")
 parser.add_argument('-i', '--image', help="path to the reference image file")
 args = parser.parse_args()
@@ -41,7 +42,9 @@ IMAGE   = args.image
 MARGIN  = args.margin
 RES     = (args.resolution, args.resolution) # for now, assume it's square
 DEPTH   = args.depth
-OUTPATH = IMAGE+'_output/' if IMAGE else 'output'
+OUTPATH = IMAGE+'_output/' if IMAGE else 'output/'
+# currIndex stores the index of current coordinate in route
+currIndex = args.index
  
 # colors in BGR for convenience
 BLACK   = (0, 0, 0)
@@ -76,15 +79,11 @@ canvasSize = (300-2*MARGIN, 300-2*MARGIN)
 # maximum error threshold in pixels
 threshold = (canvasSize[0]-MARGIN*2)/RES[0]/2
 
-# currIndex stores the index of current coordinate in route
-currIndex = 0
-
 # maximum speed
 MAXSPEED = 60
 
-if OUT:
-    if not os.path.exists(OUTPATH):
-        os.makedirs(OUTPATH)
+if not os.path.exists(OUTPATH):
+    os.makedirs(OUTPATH)
 
 if IMAGE:
     # read reference image, resize and save it
@@ -112,6 +111,10 @@ if IMAGE:
 else:
     route.append((MARGIN, MARGIN))
     values.append(0)
+
+if currIndex >= len(route):
+    print "Initial Index Error: Please check the index you specified"
+    sys.exit(1)
 
 if DEBUG:
     print "  Route:", route
