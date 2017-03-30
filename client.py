@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # import the necessary packages
+import os
 import sys
 import time
 import math     # math.pi, math.sin, math.cos
@@ -40,6 +41,7 @@ IMAGE   = args.image
 MARGIN  = args.margin
 RES     = (args.resolution, args.resolution) # for now, assume it's square
 DEPTH   = args.depth
+OUTPATH = IMAGE.split('.')[0]+'_output/'
  
 # colors in BGR for convenience
 BLACK   = (0, 0, 0)
@@ -80,12 +82,15 @@ currIndex = 0
 # maximum speed
 MAXSPEED = 60
 
+if OUT:
+    if not os.path.exists(OUTPATH):
+        os.makedirs(OUTPATH)
+
 if IMAGE:
     # read reference image, resize and save it
     img = cv2.imread(IMAGE, cv2.IMREAD_GRAYSCALE)
     img = cv2.resize(img, RES, interpolation = cv2.INTER_CUBIC)
-    cv2.imwrite(IMAGE+'_converted.png', img); 
-
+    cv2.imwrite(OUTPATH+IMAGE+'_converted.png', img); 
 
 route   = [] # a route of coordinates
 values  = [] # values/darkness of pixels
@@ -231,7 +236,7 @@ def goTo((rx, ry, bx, by), (dstx, dsty), curr):
         if values[curr] <= 0:
             # add the frame to the video file
             if OUT:
-                cv2.imwrite("timelapse/"+IMAGE+"_"+str(curr).zfill(len(str(len(route)))+1)+".jpg", fullFrame);
+                cv2.imwrite(OUTPATH+IMAGE+"_"+str(curr).zfill(len(str(len(route)))+1)+".jpg", fullFrame);
             # switch destination to the next point in route list
             if curr+1 < len(route):
                 curr += 1
@@ -240,7 +245,7 @@ def goTo((rx, ry, bx, by), (dstx, dsty), curr):
             else:
                 #curr = 0
                 if BOTLESS: print trace
-                if IMAGE: cv2.imwrite( IMAGE+"_final.jpg", frame); 
+                if IMAGE: cv2.imwrite(OUTPATH+IMAGE+"_final.jpg", frame); 
                 
         else:
             values[curr] -= 1
@@ -407,9 +412,9 @@ while (camera.isOpened()):
         #cv2.imshow("Red Mask", rmask)
         #cv2.imshow("Blue Mask", bmask)
         cv2.imshow("Frame", frame)
-        #cv2.imwrite( "frame.jpg", frame); 
-        #cv2.imwrite( "rmask.jpg", rmask); 
-        #cv2.imwrite( "bmask.jpg", bmask); 
+        #cv2.imwrite(OUTPATH+"frame.jpg", frame); 
+        #cv2.imwrite(OUTPATH+"rmask.jpg", rmask); 
+        #cv2.imwrite(OUTPATH+"bmask.jpg", bmask); 
 
     # handle key press in opencv window
     key = cv2.waitKey(1) & 0xFF
