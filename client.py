@@ -76,18 +76,18 @@ else:
 
 # initializing coordinates of red and blue markers
 # [redX, redY, blueX, blueY]
-markers        = [canvasShift[0]-15, canvasShift[1], canvasShift[0]+15, canvasShift[1]]
-virtualMarkers = [canvasShift[0]-15, canvasShift[1], canvasShift[0]+15, canvasShift[1]]
+markers        = [canvasShift[0]-25, canvasShift[1], canvasShift[0]+25, canvasShift[1]]
+virtualMarkers = [canvasShift[0]-25, canvasShift[1], canvasShift[0]+25, canvasShift[1]]
 
 # the exact size of the canvas/paper
 canvasSize = (600, 600)
 canvasSize = (canvasSize[0]-2*MARGIN, canvasSize[1]-2*MARGIN)
 
 # maximum error threshold in pixels
-threshold = (canvasSize[0]-MARGIN*2)/RES[0]/2
+threshold = canvasSize[0]/RES[0]/2
 
 # maximum speed
-MAXSPEED = 60
+MAXSPEED = 50
 
 if not os.path.exists(OUTPATH):
     os.makedirs(OUTPATH)
@@ -320,8 +320,8 @@ while (camera.isOpened()):
         markers[1] = virtualMarkers[1]
         markers[2] = virtualMarkers[2]
         markers[3] = virtualMarkers[3]
-        rradius = 6
-        bradius = 6
+        rradius = 12
+        bradius = 12
         rcenter = (markers[0], markers[1])
         bcenter = (markers[2], markers[3])
         x = (markers[2]+markers[0])/2
@@ -337,18 +337,18 @@ while (camera.isOpened()):
                 cv2.line(frame, trace[i], trace[i+1], BLACK, 1)
 
         # draw the robot
-        cv2.circle(frame, (int(x), int(y)), int((math.sqrt((markers[0]-markers[2])**2+(markers[1]-markers[3])**2)+rradius+bradius)/2), BLACK, -1)
-        cv2.circle(frame, (int(x), int(y)), int((math.sqrt((markers[0]-markers[2])**2+(markers[1]-markers[3])**2)+rradius+bradius)/2), WHITE, 1)
+        cv2.circle(frame, (int(x), int(y)), int((math.sqrt((markers[0]-markers[2])**2+(markers[1]-markers[3])**2)+rradius+bradius)/2+5), BLACK, -1)
+        cv2.circle(frame, (int(x), int(y)), int((math.sqrt((markers[0]-markers[2])**2+(markers[1]-markers[3])**2)+rradius+bradius)/2+5), WHITE, 1)
 
         # draw the red marker
         cv2.circle(frame, rcenter, int(rradius), RED, -1)
         cv2.circle(frame, (int(markers[0]), int(markers[1])), int(rradius), WHITE, 1)
-        cv2.putText(frame, '1', rcenter, 0, 0.2, WHITE)
+        cv2.putText(frame, '3', rcenter, 0, 0.4, WHITE)
 
         # draw the blue marker
         cv2.circle(frame, bcenter, int(bradius), BLUE, -1)
         cv2.circle(frame, (int(markers[2]), int(markers[3])), int(bradius), WHITE, 1)
-        cv2.putText(frame, '1', bcenter, 0, 0.2, WHITE)
+        cv2.putText(frame, '1', bcenter, 0, 0.4, WHITE)
 
     else:
         # blur the frame, and convert it to the HSV color space
@@ -394,7 +394,7 @@ while (camera.isOpened()):
                     # draw the circle and centroid on the frame,
                     cv2.circle(frame, rcenter, int(rradius), RED, -1)
                     cv2.circle(frame, (int(markers[0]), int(markers[1])), int(rradius), WHITE, 1)
-                    cv2.putText(frame, '3', rcenter, 0, 0.2, WHITE)
+                    #cv2.putText(frame, '3', rcenter, 0, 0.4, WHITE)
 
                 bM = cv2.moments(bc)
                 bcenter = (int(bM["m10"] / bM["m00"]), int(bM["m01"] / bM["m00"]))
@@ -405,7 +405,7 @@ while (camera.isOpened()):
                     # draw the circle and centroid on the frame,
                     cv2.circle(frame, bcenter, int(bradius), BLUE, -1)
                     cv2.circle(frame, (int(markers[2]), int(markers[3])), int(bradius), WHITE, 1)
-                    cv2.putText(frame, '1', bcenter, 0, 0.2, WHITE)
+                    #cv2.putText(frame, '1', bcenter, 0, 0.4, WHITE)
 
     # go to the dstx and dstb
     #goTo(rx, ry, bx, by, route[currIndex[0]][0], route[currIndex[0]][1], currIndex)
