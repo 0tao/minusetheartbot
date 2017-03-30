@@ -41,7 +41,7 @@ IMAGE   = args.image
 MARGIN  = args.margin
 RES     = (args.resolution, args.resolution) # for now, assume it's square
 DEPTH   = args.depth
-OUTPATH = IMAGE+'_output/'
+OUTPATH = IMAGE+'_output/' if IMAGE else 'output'
  
 # colors in BGR for convenience
 BLACK   = (0, 0, 0)
