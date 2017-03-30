@@ -230,7 +230,8 @@ def goTo((rx, ry, bx, by), (dstx, dsty), curr):
 
         if values[curr] <= 0:
             # add the frame to the video file
-            if OUT: cv2.imwrite("timelapse/"+IMAGE+"_"+curr.zfill(len(str(len(route)))+1)+".jpg", fullFrame);
+            if OUT:
+                cv2.imwrite("timelapse/"+IMAGE+"_"+str(curr).zfill(len(str(len(route)))+1)+".jpg", fullFrame);
             # switch destination to the next point in route list
             if curr+1 < len(route):
                 curr += 1
