@@ -27,6 +27,7 @@ parser.add_argument('-p', '--preview',  action='store_true',   help="Toggle prev
 parser.add_argument('-b', '--botless',  action='store_true',   help="Toggle botless")
 parser.add_argument('-d', '--debug',    action='store_true',   help="Toggle debug")
 parser.add_argument('-o', '--out',      action='store_true',   help="Toggle output")
+parser.add_argument('-c', '--crop',     action='store_true',   help="Toggle crop")
 parser.add_argument('-r', '--resolution',   type=int, default=20,   help="Specify the resolution of the drawing")
 parser.add_argument('-m', '--margin',       type=int, default=20,   help="Specify the margin of the drawing")
 parser.add_argument('-id', '--index',       type=int, default=0,    help="specify the initial index")
@@ -38,6 +39,7 @@ BOTLESS = args.botless
 PREVIEW = args.preview
 DEBUG   = args.debug
 OUT     = args.out
+CROP    = args.crop
 IMAGE   = args.image
 MARGIN  = args.margin
 RES     = (args.resolution, args.resolution) # for now, assume it's square
@@ -62,12 +64,15 @@ rlower = (160, 100, 100)
 rupper = (179, 255, 200)
 
 # video width and height
-videoSize = (800, 450)
+videoSize = (1600, 900)
 
 # shift from the video coordinate system to canvas coordinate system
 # a.k.a. the coordinate of top-left corner of canvas
-cropShift = (200, 40)
-canvasShift = (MARGIN, MARGIN)
+cropShift = (400, 80)
+if CROP:
+    canvasShift = (MARGIN, MARGIN)
+else:
+    canvasShift = (cropShift[0]+MARGIN, cropShift[1]+MARGIN)
 
 # initializing coordinates of red and blue markers
 # [redX, redY, blueX, blueY]
@@ -75,7 +80,7 @@ markers        = [canvasShift[0]-15, canvasShift[1], canvasShift[0]+15, canvasSh
 virtualMarkers = [canvasShift[0]-15, canvasShift[1], canvasShift[0]+15, canvasShift[1]]
 
 # the exact size of the canvas/paper
-canvasSize = (300, 300)
+canvasSize = (600, 600)
 canvasSize = (canvasSize[0]-2*MARGIN, canvasSize[1]-2*MARGIN)
 
 # maximum error threshold in pixels
@@ -306,7 +311,7 @@ while (camera.isOpened()):
     # resize the frame
     frame = imutils.resize(fullFrame, width=videoSize[0])
     
-    frame = frame[cropShift[1]:cropShift[1]+canvasSize[1]+MARGIN*4, cropShift[0]:cropShift[0]+canvasSize[0]+MARGIN*4]
+    if CROP: frame = frame[cropShift[1]:cropShift[1]+canvasSize[1]+MARGIN*4, cropShift[0]:cropShift[0]+canvasSize[0]+MARGIN*4]
 
     # virtual bot simulation
     if BOTLESS:
