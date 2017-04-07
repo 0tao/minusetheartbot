@@ -95,7 +95,7 @@ if not os.path.exists(OUTPATH):
 if IMAGE:
     # read reference image, resize and save it
     img = cv2.imread(IMAGE, cv2.IMREAD_GRAYSCALE)
-    img = cv2.resize(img, RES, interpolation = cv2.INTER_CUBIC)
+    img = cv2.resize(img, RES, interpolation = cv2.INTER_AREA)
     cv2.imwrite(OUTPATH+IMAGE+'_converted.png', img); 
 
 route   = [] # a route of coordinates
