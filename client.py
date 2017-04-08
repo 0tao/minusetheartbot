@@ -246,7 +246,9 @@ def goTo((rx, ry, bx, by), (dstx, dsty), curr):
         if values[curr] <= 0:
             # add the frame to the video file
             if OUT:
-                cv2.imwrite(OUTPATH+IMAGE+"_"+str(curr).zfill(len(str(len(route)))+1)+".jpg", fullFrame);
+                cv2.imwrite(OUTPATH+IMAGE+"_info_"+str(curr).zfill(len(str(len(route)))+1)+".jpg", frame);
+                if not BOTLESS:
+                    cv2.imwrite(OUTPATH+IMAGE+"_"+str(curr).zfill(len(str(len(route)))+1)+".jpg", fullFrame);
             # switch destination to the next point in route list
             if curr+1 < len(route):
                 curr += 1
@@ -267,6 +269,12 @@ def goTo((rx, ry, bx, by), (dstx, dsty), curr):
                 dsty += v13*3
 
     if DEBUG:
+        cv2.putText(frame, "V02: "+str(v02), (70,15), 0, 0.35, BLACK)
+        cv2.putText(frame, "V13: "+str(v13), (140,15), 0, 0.35, BLACK)
+        cv2.putText(frame, "LMT: "+str(int(speedLimit)), (210,15), 0, 0.35, BLACK)
+        cv2.putText(frame, "DIST: "+str(int(math.hypot(x - dstx, y - dsty))), (280,15), 0, 0.35, BLACK)
+        cv2.putText(frame, "IDX: "+str(curr), (350,15), 0, 0.35, BLACK)
+        cv2.putText(frame, "VAL: "+str(values[curr]), (420,15), 0, 0.35, BLACK)
         print "    Velocities:", (v02, v13), int(speedLimit)
         print "  Dist to Dest:", int(math.hypot(x - dstx, y - dsty))
         print " Current Point:", curr
@@ -293,8 +301,11 @@ def goTo((rx, ry, bx, by), (dstx, dsty), curr):
         # get feedback message from the server
         stringFromServer = clientSocket.recv(1024)
         if DEBUG:
+            if stringFromServer == "OK":
+                cv2.putText(frame, "SVR: "+stringFromServer, (10, 15), 0, 0.35, GREEN)
+            else:
+                cv2.putText(frame, "SVR: "+stringFromServer, (10, 15), 0, 0.35, RED)
             print "Server: "+stringFromServer
-            print math.hypot(x - dstx, y - dsty), currIndex
 
     return curr
 
@@ -423,7 +434,7 @@ while (camera.isOpened()):
     if PREVIEW:
         #cv2.imshow("Red Mask", rmask)
         #cv2.imshow("Blue Mask", bmask)
-        cv2.imshow("Frame", frame)
+        cv2.imshow("Monitor", frame)
         #cv2.imwrite(OUTPATH+"frame.jpg", frame); 
         #cv2.imwrite(OUTPATH+"rmask.jpg", rmask); 
         #cv2.imwrite(OUTPATH+"bmask.jpg", bmask); 
