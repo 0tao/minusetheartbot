@@ -246,7 +246,6 @@ def goTo((rx, ry, bx, by), (dstx, dsty), curr):
         if values[curr] <= 0:
             # add the frame to the video file
             if OUT:
-                cv2.imwrite(OUTPATH+IMAGE+"_info_"+str(curr).zfill(len(str(len(route)))+1)+".jpg", frame);
                 if not BOTLESS:
                     cv2.imwrite(OUTPATH+IMAGE+"_"+str(curr).zfill(len(str(len(route)))+1)+".jpg", fullFrame);
             # switch destination to the next point in route list
@@ -306,6 +305,10 @@ def goTo((rx, ry, bx, by), (dstx, dsty), curr):
             else:
                 cv2.putText(frame, "SVR: "+stringFromServer, (10, 15), 0, 0.35, RED)
             print "Server: "+stringFromServer
+
+    # output frame with info
+    if math.hypot(x - dstx, y - dsty) < threshold and values[curr] <= 0:
+        cv2.imwrite(OUTPATH+IMAGE+"_info_"+str(curr).zfill(len(str(len(route)))+1)+".jpg", frame);
 
     return curr
 
@@ -418,17 +421,17 @@ while (camera.isOpened()):
                     cv2.circle(frame, (int(markers[2]), int(markers[3])), int(bradius), WHITE, 1)
                     #cv2.putText(frame, '1', bcenter, 0, 0.4, WHITE)
 
-    # go to the dstx and dstb
-    #goTo(rx, ry, bx, by, route[currIndex[0]][0], route[currIndex[0]][1], currIndex)
-    dst = (route[currIndex][0]+canvasShift[0], route[currIndex][1]+canvasShift[1])
-    currIndex = goTo(markers, dst, currIndex)
-
     # the grid is drawn at the end so as not to affect the tracking
     if DEBUG:
         for c in range(RES[0]):
             cv2.line(frame, (route[c][0]+canvasShift[0], route[0][1]+canvasShift[1]), (route[c][0]+canvasShift[0], route[-1][1]+canvasShift[1]), WHITE, 1)
         for r in range(RES[1]):
             cv2.line(frame, (route[0][0]+canvasShift[0], route[r*RES[0]][1]+canvasShift[1]), (route[RES[0]-1][0]+canvasShift[0], route[r*RES[0]][1]+canvasShift[1]), WHITE, 1)
+
+    # go to the dstx and dstb
+    #goTo(rx, ry, bx, by, route[currIndex[0]][0], route[currIndex[0]][1], currIndex)
+    dst = (route[currIndex][0]+canvasShift[0], route[currIndex][1]+canvasShift[1])
+    currIndex = goTo(markers, dst, currIndex)
 
     # show the frame to our screen
     if PREVIEW:
