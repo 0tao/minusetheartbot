@@ -113,7 +113,7 @@ for r in range(RES[1]): # for each row
                 values.append(int((255-img[r,c])*DEPTH/256))
             # add random value if no image
             else:
-                values.append(randint(0,255)*DEPTH/256))
+                values.append(randint(0,255)*DEPTH/256)
         # odd number of rows
         else:
             route.append((MARGIN+(RES[0]-1-c)*canvasSize[1]/(RES[0]-1),
@@ -123,7 +123,7 @@ for r in range(RES[1]): # for each row
                 values.append(int((255-img[r,RES[0]-1-c])*DEPTH/256))
             # add random value if no image
             else:
-                values.append(randint(0,255)*DEPTH/256))
+                values.append(randint(0,255)*DEPTH/256)
 
 if currIndex >= len(route):
     print "Initial Index Error: Please check the index you specified"
