@@ -22,7 +22,7 @@ __license__     = 'Apache-2.0'
 __status__      = 'Development'
 
 # initialize argument parser
-parser = argparse.ArgumentParser(description="Minus E the Art Bot - Client")
+parser = argparse.ArgumentParser(description="Minus E - Client")
 parser.add_argument('-m', '--monitor',  action='store_true',   help="Toggle monitor")
 parser.add_argument('-b', '--botless',  action='store_true',   help="Toggle botless")
 parser.add_argument('-d', '--debug',    action='store_true',   help="Toggle debug")

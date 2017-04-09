@@ -18,7 +18,7 @@ __copyright__ = "Copyright 2017, Jack B. Du (Jiadong Du)"
 __license__ = "Apache-2.0"
 __status__ = "Development"
 
-parser = argparse.ArgumentParser(description="Minus E the Art Bot")
+parser = argparse.ArgumentParser(description="Minus E - Server")
 parser.add_argument('-p', '--port', type=int, default=12000, help="specify the port number")
 parser.add_argument('-o', '--oled', action='store_true', help="Toggle OLED display")
 parser.add_argument('-d', '--debug', action='store_true', help="Toggle debugging info")
