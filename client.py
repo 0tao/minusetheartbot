@@ -23,20 +23,20 @@ __status__      = 'Development'
 
 # initialize argument parser
 parser = argparse.ArgumentParser(description="Minus E the Art Bot - Client")
-parser.add_argument('-p', '--preview',  action='store_true',   help="Toggle preview")
+parser.add_argument('-m', '--monitor',  action='store_true',   help="Toggle monitor")
 parser.add_argument('-b', '--botless',  action='store_true',   help="Toggle botless")
 parser.add_argument('-d', '--debug',    action='store_true',   help="Toggle debug")
 parser.add_argument('-o', '--out',      action='store_true',   help="Toggle output")
 parser.add_argument('-c', '--crop',     action='store_true',   help="Toggle crop")
 parser.add_argument('-r', '--resolution',   type=int, default=20,   help="Specify the resolution of the drawing")
-parser.add_argument('-m', '--margin',       type=int, default=20,   help="Specify the margin of the drawing")
+parser.add_argument('-mar', '--margin',     type=int, default=20,   help="Specify the margin of the drawing")
 parser.add_argument('-id', '--index',       type=int, default=0,    help="specify the initial index")
 parser.add_argument('-dp', '--depth',       type=int, default=64,   choices=[0,2,4,8,16,32,64,128,256], help="specify the color depth")
 parser.add_argument('-i', '--image', help="path to the reference image file")
 args = parser.parse_args()
 
 BOTLESS = args.botless
-PREVIEW = args.preview
+MONITOR = args.monitor
 DEBUG   = args.debug
 OUT     = args.out
 CROP    = args.crop
@@ -214,29 +214,15 @@ def goTo((rx, ry, bx, by), (dstx, dsty), curr):
     else:
         speedLimit = MAXSPEED
 
-    # setting a absolute speedLimit
-    #speedLimit = 20
-
-    # when less than 20 pixels away form destination (in one of those cell of the final drawing)
-    #if math.hypot(x - dstx, y - dsty) < threshold:
-        # pick random speed and GO
-    #    v02 = randint(-5,5)
-    #    v13 = randint(-5,5)
-    #    speedLimit = 15
-    # when out of the cell, go towards the center of the destination
-    #else:
-        # this vector is denoted in robot coordinate system
-        # by converting from (aka rotating) the video coordinate system
-        # Equation (copied below) can be found on Wikipedia, Rotation of Axes: https://en.wikipedia.org/wiki/Rotation_of_axes
-        # x' = x\cos(\theta) + y\sin(\theta)
-        # y' = -x\sin(\theta) + y\cos(\theta)
-        # where (x', y') is the new coordinate and (x, y) is the old coordinate
-        # Here, since the red-to-blue vector (x axis of robot coordinate system)
-        # is parallel to the actual motor0 and motor2 (rather than the motor0-motor2 vector)
-        # therefore the new x' value is assigned to v02 and y' is assigned to v13
-    #    v02 = int((dstx-x)*math.cos(alpha)+(dsty-y)*math.sin(alpha))
-    #    v13 = int(-(dstx-x)*math.sin(alpha)+(dsty-y)*math.cos(alpha))
-
+    # this vector is denoted in robot coordinate system
+    # by converting from (aka rotating) the video coordinate system
+    # Equation (copied below) can be found on Wikipedia, Rotation of Axes: https://en.wikipedia.org/wiki/Rotation_of_axes
+    # x' = x\cos(\theta) + y\sin(\theta)
+    # y' = -x\sin(\theta) + y\cos(\theta)
+    # where (x', y') is the new coordinate and (x, y) is the old coordinate
+    # Here, since the red-to-blue vector (x axis of robot coordinate system)
+    # is parallel to the actual motor0 and motor2 (rather than the motor0-motor2 vector)
+    # therefore the new x' value is assigned to v02 and y' is assigned to v13
     v02 = int((dstx-x)*math.cos(alpha)+(dsty-y)*math.sin(alpha))
     v13 = int(-(dstx-x)*math.sin(alpha)+(dsty-y)*math.cos(alpha))
 
@@ -249,6 +235,7 @@ def goTo((rx, ry, bx, by), (dstx, dsty), curr):
             stringFromServer = clientSocket.recv(1024)
             #time.sleep(0.1)
 
+        # when current current index is done
         if values[curr] <= 0:
             # add the frame to the video file
             if OUT:
@@ -264,8 +251,10 @@ def goTo((rx, ry, bx, by), (dstx, dsty), curr):
                 if BOTLESS: print trace
                 if IMAGE: cv2.imwrite(OUTPATH+IMAGE+"_final.jpg", frame); 
                 
+        # when current index isn't done
         else:
             values[curr] -= 1
+            # generate random velocities
             v02 = randint(-5,5)
             v13 = randint(-5,5)
             speedLimit = 20
@@ -274,6 +263,7 @@ def goTo((rx, ry, bx, by), (dstx, dsty), curr):
                 dsty += v13*3
 
     if DEBUG:
+        # debug info displayed in monitor
         cv2.putText(frame, "V02: "+str(v02), (70,15), 0, 0.35, BLACK)
         cv2.putText(frame, "V13: "+str(v13), (140,15), 0, 0.35, BLACK)
         cv2.putText(frame, "LMT: "+str(int(speedLimit)), (210,15), 0, 0.35, BLACK)
@@ -440,7 +430,7 @@ while (camera.isOpened()):
     currIndex = goTo(markers, dst, currIndex)
 
     # show the frame to our screen
-    if PREVIEW:
+    if MONITOR:
         #cv2.imshow("Red Mask", rmask)
         #cv2.imshow("Blue Mask", bmask)
         cv2.imshow("Monitor", frame)
