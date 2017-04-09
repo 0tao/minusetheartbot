@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # import the necessary packages
-import os
-import sys
-import time
+import os       # path
+import sys      # exit
+import time     # sleep
 import math     # math.pi, math.sin, math.cos
 import argparse # argparse
 from socket import *
@@ -102,22 +102,28 @@ route   = [] # a route of coordinates
 values  = [] # values/darkness of pixels
 trace   = [] # trace of virtual bot, for displaying virtual drawing
 
-if IMAGE:
-    for r in range(RES[1]): # for each row
-        for c in range(RES[0]): # for each column
-            # even number of rows
-            if (r%2==0):
-                route.append((MARGIN+c*canvasSize[1]/(RES[0]-1),
-                              MARGIN+r*canvasSize[0]/(RES[1]-1)))
+for r in range(RES[1]): # for each row
+    for c in range(RES[0]): # for each column
+        # even number of rows
+        if (r%2==0):
+            route.append((MARGIN+c*canvasSize[1]/(RES[0]-1),
+                          MARGIN+r*canvasSize[0]/(RES[1]-1)))
+            # add value of the pixel if image is provided
+            if IMAGE:
                 values.append(int((255-img[r,c])*DEPTH/256))
-            # odd number of rows
+            # add random value if no image
             else:
-                route.append((MARGIN+(RES[0]-1-c)*canvasSize[1]/(RES[0]-1),
-                              MARGIN+r*canvasSize[0]/(RES[1]-1)))
+                values.append(randint(0,255)*DEPTH/256))
+        # odd number of rows
+        else:
+            route.append((MARGIN+(RES[0]-1-c)*canvasSize[1]/(RES[0]-1),
+                          MARGIN+r*canvasSize[0]/(RES[1]-1)))
+            # add value of the pixel if image is provided
+            if IMAGE:
                 values.append(int((255-img[r,RES[0]-1-c])*DEPTH/256))
-else:
-    route.append((MARGIN, MARGIN))
-    values.append(0)
+            # add random value if no image
+            else:
+                values.append(randint(0,255)*DEPTH/256))
 
 if currIndex >= len(route):
     print "Initial Index Error: Please check the index you specified"
