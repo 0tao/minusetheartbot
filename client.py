@@ -44,7 +44,7 @@ IMAGE   = args.image
 MARGIN  = args.margin
 RES     = (args.resolution, args.resolution) # for now, assume it's square
 DEPTH   = args.depth
-OUTPATH = IMAGE+'_output/' if IMAGE else 'output/'
+OUTPATH = IMAGE+'_output/' if IMAGE else 'generated_output/'
 # currIndex stores the index of current coordinate in route
 currIndex = args.index
  
