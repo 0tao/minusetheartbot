@@ -125,6 +125,9 @@ for r in range(RES[1]): # for each row
             else:
                 values.append(randint(0,255)*DEPTH/256)
 
+if not IMAGE:
+    IMAGE = "generated"
+
 if currIndex >= len(route):
     print "Initial Index Error: Please check the index you specified"
     sys.exit(1)
@@ -239,7 +242,7 @@ def goTo((rx, ry, bx, by), (dstx, dsty), curr):
         if values[curr] <= 0:
             # add the frame to the video file
             if OUT:
-                if not BOTLESS:
+                if not BOTLESS and IMAGE:
                     cv2.imwrite(OUTPATH+IMAGE+"_"+str(curr).zfill(len(str(len(route)))+1)+".jpg", fullFrame);
             # switch destination to the next point in route list
             if curr+1 < len(route):
@@ -303,7 +306,7 @@ def goTo((rx, ry, bx, by), (dstx, dsty), curr):
             print "Server: "+stringFromServer
 
     # output frame with info
-    if math.hypot(x - dstx, y - dsty) < threshold and values[curr] <= 0:
+    if IMAGE and math.hypot(x - dstx, y - dsty) < threshold and values[curr] <= 0:
         cv2.imwrite(OUTPATH+IMAGE+"_info_"+str(curr).zfill(len(str(len(route)))+1)+".jpg", frame);
 
     return curr
