@@ -40,9 +40,9 @@ MONITOR = args.monitor
 DEBUG   = args.debug
 OUT     = args.out
 CROP    = args.crop
+RES     = (args.resolution, args.resolution) # for now, assume it's square
 IMAGE   = args.image
 MARGIN  = args.margin
-RES     = (args.resolution, args.resolution) # for now, assume it's square
 DEPTH   = args.depth
 OUTPATH = IMAGE+'_output/' if IMAGE else 'generated_output/'
 # currIndex stores the index of current coordinate in route
@@ -79,13 +79,6 @@ else:
 markers        = [canvasShift[0]-25, canvasShift[1], canvasShift[0]+25, canvasShift[1]]
 virtualMarkers = [canvasShift[0]-25, canvasShift[1], canvasShift[0]+25, canvasShift[1]]
 
-# the exact size of the canvas/paper
-canvasSize = (600, 600)
-canvasSize = (canvasSize[0]-2*MARGIN, canvasSize[1]-2*MARGIN)
-
-# maximum error threshold in pixels
-threshold = canvasSize[0]/RES[0]/2
-
 # maximum speed
 MAXSPEED = 50
 
@@ -95,8 +88,17 @@ if not os.path.exists(OUTPATH):
 if IMAGE:
     # read reference image, resize and save it
     img = cv2.imread(IMAGE, cv2.IMREAD_GRAYSCALE)
+    h, w = img.shape
+    RES = (args.resolution*w/h, args.resolution) # for now, assume it's square
     img = cv2.resize(img, RES, interpolation = cv2.INTER_AREA)
     cv2.imwrite(OUTPATH+IMAGE+'_converted.png', img); 
+
+# the exact size of the canvas/paper
+canvasSize = (600*RES[0]/RES[1], 600)
+canvasSize = (canvasSize[0]-2*MARGIN, canvasSize[1]-2*MARGIN)
+
+# maximum error threshold in pixels
+threshold = canvasSize[0]/RES[0]/2
 
 route   = [] # a route of coordinates
 values  = [] # values/darkness of pixels
@@ -106,8 +108,8 @@ for r in range(RES[1]): # for each row
     for c in range(RES[0]): # for each column
         # even number of rows
         if (r%2==0):
-            route.append((MARGIN+c*canvasSize[1]/(RES[0]-1),
-                          MARGIN+r*canvasSize[0]/(RES[1]-1)))
+            route.append((MARGIN+c*canvasSize[0]/(RES[0]-1),
+                          MARGIN+r*canvasSize[1]/(RES[1]-1)))
             # add value of the pixel if image is provided
             if IMAGE:
                 values.append(int((255-img[r,c])*DEPTH/256))
@@ -116,8 +118,8 @@ for r in range(RES[1]): # for each row
                 values.append(randint(0,255)*DEPTH/256)
         # odd number of rows
         else:
-            route.append((MARGIN+(RES[0]-1-c)*canvasSize[1]/(RES[0]-1),
-                          MARGIN+r*canvasSize[0]/(RES[1]-1)))
+            route.append((MARGIN+(RES[0]-1-c)*canvasSize[0]/(RES[0]-1),
+                          MARGIN+r*canvasSize[1]/(RES[1]-1)))
             # add value of the pixel if image is provided
             if IMAGE:
                 values.append(int((255-img[r,RES[0]-1-c])*DEPTH/256))
@@ -313,7 +315,7 @@ def goTo((rx, ry, bx, by), (dstx, dsty), curr):
 
     
 # start opencv video capture with video0
-camera = cv2.VideoCapture(1)
+camera = cv2.VideoCapture(0)
 #camera.set(cv2.CAP_PROP_AUTOFOCUS, 0)
 
 while (camera.isOpened()):
