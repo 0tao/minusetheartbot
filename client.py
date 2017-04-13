@@ -29,7 +29,7 @@ parser.add_argument('-d', '--debug',    action='store_true',   help="Toggle debu
 parser.add_argument('-o', '--out',      action='store_true',   help="Toggle output")
 parser.add_argument('-c', '--crop',     action='store_true',   help="Toggle crop")
 parser.add_argument('-r', '--resolution',   type=int, default=20,   help="Specify the height of the drawing")
-parser.add_argument('-h', '--height',       type=int, default=600,   help="Specify the height of the canvas")
+parser.add_argument('-can', '--canvas',     type=int, default=600,  help="Specify the height of the canvas")
 parser.add_argument('-mar', '--margin',     type=int, default=20,   help="Specify the margin of the drawing")
 parser.add_argument('-id', '--index',       type=int, default=0,    help="specify the initial index")
 parser.add_argument('-dp', '--depth',       type=int, default=64,   choices=[0,2,4,8,16,32,64,128,256], help="specify the color depth")
@@ -42,7 +42,7 @@ DEBUG   = args.debug
 OUT     = args.out
 CROP    = args.crop
 RES     = (args.resolution, args.resolution) # for now, assume it's square
-HEIGHT  = args.height
+CANVAS  = args.canvas
 IMAGE   = args.image
 MARGIN  = args.margin
 DEPTH   = args.depth
@@ -96,7 +96,7 @@ if IMAGE:
     cv2.imwrite(OUTPATH+IMAGE+'_converted.png', img); 
 
 # the exact size of the canvas/paper
-canvasSize = (HEIGHT*RES[0]/RES[1], HEIGHT)
+canvasSize = (CANVAS*RES[0]/RES[1], CANVAS)
 canvasSize = (canvasSize[0]-2*MARGIN, canvasSize[1]-2*MARGIN)
 
 # maximum error threshold in pixels
@@ -317,7 +317,7 @@ def goTo((rx, ry, bx, by), (dstx, dsty), curr):
 
     
 # start opencv video capture with video0
-camera = cv2.VideoCapture(0)
+camera = cv2.VideoCapture(1)
 #camera.set(cv2.CAP_PROP_AUTOFOCUS, 0)
 
 while (camera.isOpened()):
