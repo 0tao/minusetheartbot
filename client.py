@@ -34,6 +34,7 @@ parser.add_argument('-mar', '--margin',     type=int, default=20,   help="Specif
 parser.add_argument('-id', '--index',       type=int, default=0,    help="specify the initial index")
 parser.add_argument('-dp', '--depth',       type=int, default=64,   choices=[0,2,4,8,16,32,64,128,256], help="specify the color depth")
 parser.add_argument('-i', '--image', help="path to the reference image file")
+parser.add_argument('-p', '--perspective',  nargs='+', help="specify the corners of canvas")
 args = parser.parse_args()
 
 BOTLESS = args.botless
@@ -47,6 +48,7 @@ IMAGE   = args.image
 MARGIN  = args.margin
 DEPTH   = args.depth
 OUTPATH = IMAGE+'_output/' if IMAGE else 'generated_output/'
+PERS    = args.perspective
 # currIndex stores the index of current coordinate in route
 currIndex = args.index
  
@@ -60,6 +62,7 @@ RED     = (0, 0, 255)
 # define the lower and upper boundaries of blue and red color of 
 # the balls/markers in the HSV color space
 # so far, this requires manual calibration depending on the light condition
+# (0-179, 0-255, 0-255)
 blower = (92, 100, 0)
 bupper = (112, 255, 255)
 rlower = (160, 100, 100)
@@ -146,7 +149,7 @@ if DEBUG:
 
 if not BOTLESS:
     # initialize tcp connection
-    serverName = '10.209.11.115'
+    serverName = 'minusetheartbot.local'
     serverPort = 12000
     clientSocket = socket(AF_INET, SOCK_STREAM)
     clientSocket.connect((serverName, serverPort))
@@ -317,8 +320,29 @@ def goTo((rx, ry, bx, by), (dstx, dsty), curr):
 
     
 # start opencv video capture with video0
-camera = cv2.VideoCapture(1)
+camera = cv2.VideoCapture(0)
 #camera.set(cv2.CAP_PROP_AUTOFOCUS, 0)
+
+# points before transform
+fourPoints = []
+if (PERS):
+    for i in range(4):
+        fourPoints.append([PERS[i*2], PERS[i*2+1]])
+
+def addPoint(event,x,y,flags,param):
+    if (len(fourPoints) < 4):
+        if event == cv2.EVENT_LBUTTONDOWN:
+            fourPoints.append([x, y]);
+            print(fourPoints)
+    else:
+        toPrint = ""
+        for point in fourPoints:
+            toPrint += str(point[0]) + " " + str(point[1]) + " "
+
+        print toPrint
+
+cv2.namedWindow('Monitor')
+cv2.setMouseCallback('Monitor', addPoint)
 
 while (camera.isOpened()):
 
@@ -327,8 +351,18 @@ while (camera.isOpened()):
 
     # resize the frame
     frame = imutils.resize(fullFrame, width=videoSize[0])
-    
+
+   
     if CROP: frame = frame[cropShift[1]:cropShift[1]+canvasSize[1]+MARGIN*4, cropShift[0]:cropShift[0]+canvasSize[0]+MARGIN*4]
+
+    # transform
+    if (len(fourPoints) > 3):
+        rows,cols,ch = frame.shape
+        pts1 = np.float32(fourPoints[:4])
+        pts2 = np.float32([[0,0],[rows/RES[1]*RES[0],0],[rows/RES[1]*RES[0],rows],[0,rows]])
+        M = cv2.getPerspectiveTransform(pts1,pts2)
+        frame = cv2.warpPerspective(frame,M,(cols,rows))
+ 
 
     # virtual bot simulation
     if BOTLESS:
