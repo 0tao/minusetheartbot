@@ -5,6 +5,7 @@ import sys      # exit
 import time     # sleep
 import math     # math.pi, math.sin, math.cos
 import argparse # argparse
+import datetime # datetime
 from socket import *
 from random import randint
 try:
@@ -47,7 +48,7 @@ CANVAS  = args.canvas
 IMAGE   = args.image
 MARGIN  = args.margin
 DEPTH   = args.depth
-OUTPATH = IMAGE+'_output/' if IMAGE else 'generated_output/'
+OUTPATH = datetime.datetime.now().strftime('%s_%Y%m%d_')  + (IMAGE+'_output/' if IMAGE else 'generated_output/')
 PERS    = args.perspective
 # currIndex stores the index of current coordinate in route
 currIndex = args.index
