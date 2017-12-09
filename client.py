@@ -48,10 +48,11 @@ CANVAS  = args.canvas
 IMAGE   = args.image
 MARGIN  = args.margin
 DEPTH   = args.depth
-OUTPATH = datetime.datetime.now().strftime('%s_%Y%m%d_')  + (IMAGE+'_output/' if IMAGE else 'generated_output/')
 PERS    = args.perspective
 # currIndex stores the index of current coordinate in route
 currIndex = args.index
+OUTPATH = datetime.datetime.now().strftime('%s_%Y%m%d_')  + (IMAGE+'_output/' if IMAGE else 'generated_output/')
+frameCount = 0
  
 # colors in BGR for convenience
 BLACK   = (0, 0, 0)
@@ -98,6 +99,10 @@ if IMAGE:
     RES = (args.resolution*w/h, args.resolution) # for now, assume it's square
     img = cv2.resize(img, RES, interpolation = cv2.INTER_AREA)
     cv2.imwrite(OUTPATH+IMAGE+'_converted.png', img); 
+
+log = open(OUTPATH+"log.txt", "w")
+log.write(str(args))
+log.close()
 
 # the exact size of the canvas/paper
 canvasSize = (CANVAS*RES[0]/RES[1], CANVAS)
@@ -158,6 +163,7 @@ if not BOTLESS:
 # go to point (dstx, dsty) on the video stream
 def goTo((rx, ry, bx, by), (dstx, dsty), curr):
     global virtualMarkers
+    global frameCount
 
     #          |
     #     q2   |   q3
@@ -245,6 +251,11 @@ def goTo((rx, ry, bx, by), (dstx, dsty), curr):
             clientSocket.send(str([0,0,0,0,0]))
             stringFromServer = clientSocket.recv(1024)
             #time.sleep(0.1)
+
+        if values[curr] % 2 == 0:
+            cv2.imwrite(OUTPATH+IMAGE+"_"+str(frameCount).zfill(8)+".jpg", fullFrame)
+            frameCount += 1
+
 
         # when current current index is done
         if values[curr] <= 0:
