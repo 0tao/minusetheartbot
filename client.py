@@ -53,6 +53,7 @@ PERS    = args.perspective
 currIndex = args.index
 OUTPATH = datetime.datetime.now().strftime('%s_%Y%m%d_')  + (IMAGE+'_output/' if IMAGE else 'generated_output/')
 frameCount = 0
+isPaused = True
  
 # colors in BGR for convenience
 BLACK   = (0, 0, 0)
@@ -502,6 +503,9 @@ while (camera.isOpened()):
         for r in range(RES[1]):
             cv2.line(frame, (route[0][0]+canvasShift[0], route[r*RES[0]][1]+canvasShift[1]), (route[RES[0]-1][0]+canvasShift[0], route[r*RES[0]][1]+canvasShift[1]), WHITE, 1)
 
+    if isPaused:
+        markers = [-1,-1,-1,-1]
+
     # go to the dstx and dstb
     #goTo(rx, ry, bx, by, route[currIndex[0]][0], route[currIndex[0]][1], currIndex)
     dst = (route[currIndex][0]+canvasShift[0], route[currIndex][1]+canvasShift[1])
@@ -521,6 +525,9 @@ while (camera.isOpened()):
     # if the 'q' key is pressed, stop the loop
     if key == ord("q"):
         break
+    elif key == ord(" "):
+        isPaused = not isPaused
+        print isPaused
 
 # closing stuff before exiting
 camera.release()
