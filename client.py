@@ -83,7 +83,7 @@ else:
 
 # initializing coordinates of red and blue markers
 # [redX, redY, blueX, blueY]
-markers        = [canvasShift[0]-25, canvasShift[1], canvasShift[0]+25, canvasShift[1]]
+markers        = [-1, -1, -1, -1]
 virtualMarkers = [canvasShift[0]-25, canvasShift[1], canvasShift[0]+25, canvasShift[1]]
 
 # maximum speed
@@ -221,121 +221,124 @@ def goTo((rx, ry, bx, by), (dstx, dsty), curr):
     #                      motor2
     #                      robot-y
 
-    # coordinates of the robot center in video coordinate system
-    x, y = (rx+bx)/2, (ry+by)/2
+    if (rx != -1):
+        # coordinates of the robot center in video coordinate system
+        x, y = (rx+bx)/2, (ry+by)/2
 
-    # red-to-blue vector (x axis of robot coordinate system) in video coordinate system
-    dx, dy = bx-rx, by-ry
+        # red-to-blue vector (x axis of robot coordinate system) in video coordinate system
+        dx, dy = bx-rx, by-ry
 
-    # line from robot to dest
-    cv2.line(frame, (int(x),int(y)), (int(dstx),int(dsty)), WHITE)
+        # line from robot to dest
+        cv2.line(frame, (int(x),int(y)), (int(dstx),int(dsty)), WHITE)
 
-    # get the slope of the Red-to-Blue vector relative of x axis of video coordinate system
-    if dx != 0:
-        slope = dy/dx
-    else:
-        slope = 100000
-    
-    # alpha is the rotation of  (red-to-blue vector / x axis in) robot coordinate system
-    # relative to (x axis of) the video coordinate system, clockwise denotes positive
-    # 0 <= alpha <= 2*pi
-    alpha = math.atan(slope)
-    # adjusting alpha based on which quadrant the red-to-blue vector lies
-    if dx < 0:
-            # when the vector is at q1, adding the angle of q0, which is pi/2
-            alpha += math.pi
-    elif dx == 0:   # dx == 0
-        if dy > 0:
-            # when the vector is on video-y, between q1 and q0
-            # alpha should be precisely pi/2
-            alpha = math.pi/2
-        else: # dy < 0, note dy != 0 since dx == 0 and |vector| !=  0
-            # when the vector is on video-y, between q2 and q3
-            # alpha should be precisely 3 * pi/2
-            alpha = 3*math.pi/2
-
-    # when distance between (x,y) and (dstx, dsty) < 200 pixels
-    # aka when less than 200 pixels away from destination
-    # slow down the speed as the robot approaches the destination
-    if math.hypot(x - dstx, y - dsty) < 200:
-        speedLimit = MAXSPEED/4 + MAXSPEED/2 * math.hypot(x - dstx, y - dsty) / 200
-    # when more than 200 pixels away from destination
-    # move at "full speed"
-    else:
-        speedLimit = MAXSPEED
-
-    # this vector is denoted in robot coordinate system
-    # by converting from (aka rotating) the video coordinate system
-    # Equation (copied below) can be found on Wikipedia, Rotation of Axes: https://en.wikipedia.org/wiki/Rotation_of_axes
-    # x' = x\cos(\theta) + y\sin(\theta)
-    # y' = -x\sin(\theta) + y\cos(\theta)
-    # where (x', y') is the new coordinate and (x, y) is the old coordinate
-    # Here, since the red-to-blue vector (x axis of robot coordinate system)
-    # is parallel to the actual motor0 and motor2 (rather than the motor0-motor2 vector)
-    # therefore the new x' value is assigned to v02 and y' is assigned to v13
-    v02 = int((dstx-x)*math.cos(alpha)+(dsty-y)*math.sin(alpha))
-    v13 = int(-(dstx-x)*math.sin(alpha)+(dsty-y)*math.cos(alpha))
-
-    # This part is to handle the route
-    # when less than threshold pixels away from destination
-    if math.hypot(x - dstx, y - dsty) < threshold:
-        if not BOTLESS:
-            # pause 0.5 seconds for the robot to stop
-            clientSocket.send(str([0,0,0,0,0]))
-            stringFromServer = clientSocket.recv(1024)
-            #time.sleep(0.1)
-
-        if values[curr] % 2 == 0:
-            cv2.imwrite(OUTPATH+IMAGE+"_"+str(frameCount).zfill(8)+".jpg", fullFrame)
-            frameCount += 1
-
-
-        # when current current index is done
-        if values[curr] <= 0:
-            # add the frame to the video file
-            if OUT:
-                if not BOTLESS and IMAGE:
-                    cv2.imwrite(OUTPATH+IMAGE+"_"+str(curr).zfill(len(str(len(route)))+1)+".jpg", fullFrame);
-            # switch destination to the next point in route list
-            if curr+1 < len(route):
-                curr += 1
-        #        print "+"
-            # goes back to the first point if the route list is finished
-            else:
-                #curr = 0
-                if BOTLESS: print trace
-                if IMAGE: cv2.imwrite(OUTPATH+IMAGE+"_final.jpg", frame); 
-                
-        # when current index isn't done
+        # get the slope of the Red-to-Blue vector relative of x axis of video coordinate system
+        if dx != 0:
+            slope = dy/dx
         else:
-            values[curr] -= 1
-            # generate random velocities
-            v02 = randint(-5,5)
-            v13 = randint(-5,5)
-            speedLimit = 20
-            if BOTLESS:
-                dstx += v02*3
-                dsty += v13*3
+            slope = 100000
+        
+        # alpha is the rotation of  (red-to-blue vector / x axis in) robot coordinate system
+        # relative to (x axis of) the video coordinate system, clockwise denotes positive
+        # 0 <= alpha <= 2*pi
+        alpha = math.atan(slope)
+        # adjusting alpha based on which quadrant the red-to-blue vector lies
+        if dx < 0:
+                # when the vector is at q1, adding the angle of q0, which is pi/2
+                alpha += math.pi
+        elif dx == 0:   # dx == 0
+            if dy > 0:
+                # when the vector is on video-y, between q1 and q0
+                # alpha should be precisely pi/2
+                alpha = math.pi/2
+            else: # dy < 0, note dy != 0 since dx == 0 and |vector| !=  0
+                # when the vector is on video-y, between q2 and q3
+                # alpha should be precisely 3 * pi/2
+                alpha = 3*math.pi/2
 
-    if DEBUG:
-        # debug info displayed in monitor
-        cv2.putText(frame, "V02: "+str(v02), (70,15), 0, 0.35, BLACK)
-        cv2.putText(frame, "V13: "+str(v13), (140,15), 0, 0.35, BLACK)
-        cv2.putText(frame, "LMT: "+str(int(speedLimit)), (210,15), 0, 0.35, BLACK)
-        cv2.putText(frame, "DIST: "+str(int(math.hypot(x - dstx, y - dsty))), (280,15), 0, 0.35, BLACK)
-        cv2.putText(frame, "IDX: "+str(curr), (350,15), 0, 0.35, BLACK)
-        cv2.putText(frame, "VAL: "+str(values[curr]), (420,15), 0, 0.35, BLACK)
-        print "    Velocities:", (v02, v13), int(speedLimit)
-        print "  Dist to Dest:", int(math.hypot(x - dstx, y - dsty))
-        print " Current Point:", curr
-        print " Current Value:", values[curr]
-    # considering a simple case where the (x,y) to (dstx, dsty) vector is at rq0, then
-    # the motor0 should rotate counter-clockwise (-)
-    # the motor1 should rotate counter-clockwise (-)
-    # the motor2 should rotate clockwise (+)
-    # the motor3 should rotate clockwise (+)
-    # note here clockwise/counter-clockwise is defined as the direction when you face the motor
-    velocities = [-int(v02), -int(v13), int(v02), int(v13)]
+        # when distance between (x,y) and (dstx, dsty) < 200 pixels
+        # aka when less than 200 pixels away from destination
+        # slow down the speed as the robot approaches the destination
+        if math.hypot(x - dstx, y - dsty) < 200:
+            speedLimit = MAXSPEED/4 + MAXSPEED/2 * math.hypot(x - dstx, y - dsty) / 200
+        # when more than 200 pixels away from destination
+        # move at "full speed"
+        else:
+            speedLimit = MAXSPEED
+
+        # this vector is denoted in robot coordinate system
+        # by converting from (aka rotating) the video coordinate system
+        # Equation (copied below) can be found on Wikipedia, Rotation of Axes: https://en.wikipedia.org/wiki/Rotation_of_axes
+        # x' = x\cos(\theta) + y\sin(\theta)
+        # y' = -x\sin(\theta) + y\cos(\theta)
+        # where (x', y') is the new coordinate and (x, y) is the old coordinate
+        # Here, since the red-to-blue vector (x axis of robot coordinate system)
+        # is parallel to the actual motor0 and motor2 (rather than the motor0-motor2 vector)
+        # therefore the new x' value is assigned to v02 and y' is assigned to v13
+        v02 = int((dstx-x)*math.cos(alpha)+(dsty-y)*math.sin(alpha))
+        v13 = int(-(dstx-x)*math.sin(alpha)+(dsty-y)*math.cos(alpha))
+
+        # This part is to handle the route
+        # when less than threshold pixels away from destination
+        if math.hypot(x - dstx, y - dsty) < threshold:
+            if not BOTLESS:
+                # pause 0.5 seconds for the robot to stop
+                clientSocket.send(str([0,0,0,0,0]))
+                stringFromServer = clientSocket.recv(1024)
+                #time.sleep(0.1)
+
+            if values[curr] % 2 == 0:
+                cv2.imwrite(OUTPATH+IMAGE+"_"+str(frameCount).zfill(8)+".jpg", fullFrame)
+                frameCount += 1
+
+
+            # when current current index is done
+            if values[curr] <= 0:
+                # add the frame to the video file
+                if OUT:
+                    if not BOTLESS and IMAGE:
+                        cv2.imwrite(OUTPATH+IMAGE+"_"+str(curr).zfill(len(str(len(route)))+1)+".jpg", fullFrame);
+                # switch destination to the next point in route list
+                if curr+1 < len(route):
+                    curr += 1
+            #        print "+"
+                # goes back to the first point if the route list is finished
+                else:
+                    #curr = 0
+                    if BOTLESS: print trace
+                    if IMAGE: cv2.imwrite(OUTPATH+IMAGE+"_final.jpg", frame); 
+                    
+            # when current index isn't done
+            else:
+                values[curr] -= 1
+                # generate random velocities
+                v02 = randint(-5,5)
+                v13 = randint(-5,5)
+                speedLimit = 20
+                if BOTLESS:
+                    dstx += v02*3
+                    dsty += v13*3
+
+        if DEBUG:
+            # debug info displayed in monitor
+            cv2.putText(frame, "V02: "+str(v02), (70,15), 0, 0.35, BLACK)
+            cv2.putText(frame, "V13: "+str(v13), (140,15), 0, 0.35, BLACK)
+            cv2.putText(frame, "LMT: "+str(int(speedLimit)), (210,15), 0, 0.35, BLACK)
+            cv2.putText(frame, "DIST: "+str(int(math.hypot(x - dstx, y - dsty))), (280,15), 0, 0.35, BLACK)
+            cv2.putText(frame, "IDX: "+str(curr), (350,15), 0, 0.35, BLACK)
+            cv2.putText(frame, "VAL: "+str(values[curr]), (420,15), 0, 0.35, BLACK)
+            print "    Velocities:", (v02, v13), int(speedLimit)
+            print "  Dist to Dest:", int(math.hypot(x - dstx, y - dsty))
+            print " Current Point:", curr
+            print " Current Value:", values[curr]
+        # considering a simple case where the (x,y) to (dstx, dsty) vector is at rq0, then
+        # the motor0 should rotate counter-clockwise (-)
+        # the motor1 should rotate counter-clockwise (-)
+        # the motor2 should rotate clockwise (+)
+        # the motor3 should rotate clockwise (+)
+        # note here clockwise/counter-clockwise is defined as the direction when you face the motor
+        velocities = [-int(v02), -int(v13), int(v02), int(v13)]
+    else:
+        velocities = [0,0,0,0]
 
     if BOTLESS:
         virtualMarkers[0] += int((dstx-x)*speedLimit/50)
@@ -481,6 +484,8 @@ while (camera.isOpened()):
                     cv2.circle(frame, bcenter, int(bradius), BLUE, -1)
                     cv2.circle(frame, (int(markers[2]), int(markers[3])), int(bradius), WHITE, 1)
                     #cv2.putText(frame, '1', bcenter, 0, 0.4, WHITE)
+        else:
+            markers = [-1,-1,-1,-1]
 
     # the grid is drawn at the end so as not to affect the tracking
     if DEBUG:
