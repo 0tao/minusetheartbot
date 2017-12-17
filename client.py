@@ -465,6 +465,9 @@ while (camera.isOpened()):
             ((markers[0], markers[1]), rradius) = cv2.minEnclosingCircle(rc)
             bc = max(bcnts, key=cv2.contourArea)
             ((markers[2], markers[3]), bradius) = cv2.minEnclosingCircle(bc)
+            # faulty markers if either radius is too large or distance between markers is too large
+            if rradius > 50 or bradius > 50 or math.hypot(markers[0]-markers[2], markers[1]-markers[3]) > 100:
+                markers = [-1,-1,-1,-1]
 
             if DEBUG:
                 rM = cv2.moments(rc)
