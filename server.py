@@ -76,7 +76,7 @@ def stop(motors):
     if DEBUG: print("Stopping motors ...")
     #STOP
     setVelocities(motors, [0,0,0,0], 0);
-    time.sleep(1)
+    time.sleep(0.02)
 
 def main():
 
@@ -156,6 +156,7 @@ def main():
 
                         except:
                             if DEBUG: print "Converting message Error: ", stringFromClient
+                            stop(motors)
 
                         if DEBUG: print "Setting the velocities ..."
 
