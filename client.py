@@ -170,8 +170,8 @@ if (PERS):
     for i in range(4):
         perspectiveCorners.append([PERS[i*2], PERS[i*2+1]])
 
-# add perspective point
-def addCorner(event,x,y,flags,param):
+def mouseCallback(event,x,y,flags,param):
+    # add perspective point
     if (len(perspectiveCorners) < 4):
         if event == cv2.EVENT_LBUTTONDOWN:
             perspectiveCorners.append([x, y]);
@@ -185,7 +185,7 @@ cv2.namedWindow("Reference")
 
 # initializing mouse click callback
 cv2.namedWindow('Monitor')
-cv2.setMouseCallback('Monitor', addCorner)
+cv2.setMouseCallback('Monitor', mouseCallback)
 
 # arrange windows
 cv2.moveWindow("Monitor", 0, 0);
