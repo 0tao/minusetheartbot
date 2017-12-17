@@ -168,10 +168,10 @@ def main():
                             connectionSocket.send("OK")
 
                     if DEBUG: print("Disconnected to " + str(addr) + "!")
-                        stop(motors)
+                    stop(motors)
                     if DEBUG: print("Closing the socket " + str(addr) + " ...")
-                        connectionSocket.close()
-                        loopCount = 0
+                    connectionSocket.close()
+                    loopCount = 0
 
             except TypeError:
                 if DEBUG:
