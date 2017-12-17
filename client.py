@@ -95,6 +95,7 @@ if not os.path.exists(OUTPATH):
 if IMAGE:
     # read reference image, resize and save it
     img = cv2.imread(IMAGE, cv2.IMREAD_GRAYSCALE)
+    cv2.imshow("Reference", img)
     h, w = img.shape
     RES = (args.resolution*w/h, args.resolution) # for now, assume it's square
     img = cv2.resize(img, RES, interpolation = cv2.INTER_AREA)
@@ -336,22 +337,17 @@ camera = cv2.VideoCapture(0)
 #camera.set(cv2.CAP_PROP_AUTOFOCUS, 0)
 
 # points before transform
-fourPoints = []
+perspectiveCorners = []
 if (PERS):
     for i in range(4):
-        fourPoints.append([PERS[i*2], PERS[i*2+1]])
+        perspectiveCorners.append([PERS[i*2], PERS[i*2+1]])
 
+# add perspective point
 def addPoint(event,x,y,flags,param):
-    if (len(fourPoints) < 4):
+    if (len(perspectiveCorners) < 4):
         if event == cv2.EVENT_LBUTTONDOWN:
-            fourPoints.append([x, y]);
-            print(fourPoints)
-    else:
-        toPrint = ""
-        for point in fourPoints:
-            toPrint += str(point[0]) + " " + str(point[1]) + " "
-
-        print toPrint
+            perspectiveCorners.append([x, y]);
+    if DEBUG: print perspectiveCorners 
 
 cv2.namedWindow('Monitor')
 cv2.setMouseCallback('Monitor', addPoint)
@@ -368,9 +364,9 @@ while (camera.isOpened()):
     if CROP: frame = frame[cropShift[1]:cropShift[1]+canvasSize[1]+MARGIN*4, cropShift[0]:cropShift[0]+canvasSize[0]+MARGIN*4]
 
     # transform
-    if (len(fourPoints) > 3):
+    if (len(perspectiveCorners) > 3):
         rows,cols,ch = frame.shape
-        pts1 = np.float32(fourPoints[:4])
+        pts1 = np.float32(perspectiveCorners[:4])
         pts2 = np.float32([[0,0],[rows/RES[1]*RES[0],0],[rows/RES[1]*RES[0],rows],[0,rows]])
         M = cv2.getPerspectiveTransform(pts1,pts2)
         frame = cv2.warpPerspective(frame,M,(cols,rows))
