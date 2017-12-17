@@ -172,10 +172,12 @@ if (PERS):
 
 def mouseCallback(event,x,y,flags,param):
     # add perspective point
-    if (len(perspectiveCorners) < 4):
-        if event == cv2.EVENT_LBUTTONDOWN:
+    if event == cv2.EVENT_LBUTTONDOWN:
+        if (len(perspectiveCorners) < 4):
             perspectiveCorners.append([x, y]);
-    if DEBUG: print perspectiveCorners 
+        if DEBUG:
+            print "Perspective Corners: "+str(perspectiveCorners)
+            print "HSV Color: "+str(cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)[y,x])
 
 # reference image window
 imgShow = cv2.imread(IMAGE, cv2.IMREAD_COLOR)
