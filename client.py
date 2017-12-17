@@ -221,6 +221,7 @@ def goTo((rx, ry, bx, by), (dstx, dsty), curr):
     #                      motor2
     #                      robot-y
 
+    # if color is detected
     if (rx != -1):
         # coordinates of the robot center in video coordinate system
         x, y = (rx+bx)/2, (ry+by)/2
@@ -337,8 +338,11 @@ def goTo((rx, ry, bx, by), (dstx, dsty), curr):
         # the motor3 should rotate clockwise (+)
         # note here clockwise/counter-clockwise is defined as the direction when you face the motor
         velocities = [-int(v02), -int(v13), int(v02), int(v13)]
+    # if either color is not detected
     else:
         velocities = [0,0,0,0]
+        x = -1
+        y = -1
 
     if BOTLESS:
         virtualMarkers[0] += int((dstx-x)*speedLimit/50)
@@ -484,6 +488,7 @@ while (camera.isOpened()):
                     cv2.circle(frame, bcenter, int(bradius), BLUE, -1)
                     cv2.circle(frame, (int(markers[2]), int(markers[3])), int(bradius), WHITE, 1)
                     #cv2.putText(frame, '1', bcenter, 0, 0.4, WHITE)
+        # if either color is not detected
         else:
             markers = [-1,-1,-1,-1]
 
