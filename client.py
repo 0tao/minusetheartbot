@@ -342,6 +342,7 @@ def goTo((rx, ry, bx, by), (dstx, dsty), curr):
     # if either color is not detected
     else:
         velocities = [0,0,0,0]
+        speedLimit = 0
         x = -1
         y = -1
 
