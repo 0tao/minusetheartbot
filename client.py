@@ -95,8 +95,6 @@ if not os.path.exists(OUTPATH):
 if IMAGE:
     # read reference image, resize and save it
     img = cv2.imread(IMAGE, cv2.IMREAD_GRAYSCALE)
-    cv2.imshow("Reference", img)
-    cv2.namedWindow("Reference")
     # initializing mouse click callback
     h, w = img.shape
     RES = (args.resolution*w/h, args.resolution) # for now, assume it's square
@@ -110,6 +108,9 @@ log.close()
 # the exact size of the canvas/paper
 canvasSize = (CANVAS*RES[0]/RES[1], CANVAS)
 canvasSize = (canvasSize[0]-2*MARGIN, canvasSize[1]-2*MARGIN)
+
+# the monitor window size
+windowSize = (canvasSize[0]+MARGIN*4, canvasSize[1]+MARGIN*4)
 
 # maximum error threshold in pixels
 threshold = canvasSize[0]/RES[0]/2
@@ -176,13 +177,19 @@ def addCorner(event,x,y,flags,param):
             perspectiveCorners.append([x, y]);
     if DEBUG: print perspectiveCorners 
 
+# reference image window
+imgShow = cv2.imread(IMAGE, cv2.IMREAD_COLOR)
+imgShow = cv2.resize(imgShow, (windowSize[0]/2,windowSize[1]/2), interpolation = cv2.INTER_AREA)
+cv2.imshow("Reference", imgShow)
+cv2.namedWindow("Reference")
+
 # initializing mouse click callback
 cv2.namedWindow('Monitor')
 cv2.setMouseCallback('Monitor', addCorner)
 
 # arrange windows
 cv2.moveWindow("Monitor", 0, 0);
-cv2.moveWindow("Reference", canvasSize[1]+MARGIN*4, 0);
+cv2.moveWindow("Reference", windowSize[0], 0);
 
 # go to point (dstx, dsty) on the video stream
 def goTo((rx, ry, bx, by), (dstx, dsty), curr):
