@@ -96,6 +96,8 @@ if IMAGE:
     # read reference image, resize and save it
     img = cv2.imread(IMAGE, cv2.IMREAD_GRAYSCALE)
     cv2.imshow("Reference", img)
+    cv2.namedWindow("Reference")
+    # initializing mouse click callback
     h, w = img.shape
     RES = (args.resolution*w/h, args.resolution) # for now, assume it's square
     img = cv2.resize(img, RES, interpolation = cv2.INTER_AREA)
@@ -160,6 +162,27 @@ if not BOTLESS:
     serverPort = 12000
     clientSocket = socket(AF_INET, SOCK_STREAM)
     clientSocket.connect((serverName, serverPort))
+
+# points before transform
+perspectiveCorners = []
+if (PERS):
+    for i in range(4):
+        perspectiveCorners.append([PERS[i*2], PERS[i*2+1]])
+
+# add perspective point
+def addCorner(event,x,y,flags,param):
+    if (len(perspectiveCorners) < 4):
+        if event == cv2.EVENT_LBUTTONDOWN:
+            perspectiveCorners.append([x, y]);
+    if DEBUG: print perspectiveCorners 
+
+# initializing mouse click callback
+cv2.namedWindow('Monitor')
+cv2.setMouseCallback('Monitor', addCorner)
+
+# arrange windows
+cv2.moveWindow("Monitor", 0, 0);
+cv2.moveWindow("Reference", canvasSize[1]+MARGIN*4, 0);
 
 # go to point (dstx, dsty) on the video stream
 def goTo((rx, ry, bx, by), (dstx, dsty), curr):
@@ -335,22 +358,6 @@ def goTo((rx, ry, bx, by), (dstx, dsty), curr):
 # start opencv video capture with video0
 camera = cv2.VideoCapture(0)
 #camera.set(cv2.CAP_PROP_AUTOFOCUS, 0)
-
-# points before transform
-perspectiveCorners = []
-if (PERS):
-    for i in range(4):
-        perspectiveCorners.append([PERS[i*2], PERS[i*2+1]])
-
-# add perspective point
-def addPoint(event,x,y,flags,param):
-    if (len(perspectiveCorners) < 4):
-        if event == cv2.EVENT_LBUTTONDOWN:
-            perspectiveCorners.append([x, y]);
-    if DEBUG: print perspectiveCorners 
-
-cv2.namedWindow('Monitor')
-cv2.setMouseCallback('Monitor', addPoint)
 
 while (camera.isOpened()):
 
