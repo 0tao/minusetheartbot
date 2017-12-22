@@ -76,7 +76,7 @@ videoSize = (1600, 900)
 
 # shift from the video coordinate system to canvas coordinate system
 # a.k.a. the coordinate of top-left corner of canvas
-cropShift = (400, 80)
+cropShift = (400, 50)
 if CROP:
     canvasShift = (MARGIN, MARGIN)
 else:
@@ -380,132 +380,136 @@ camera = cv2.VideoCapture(0)
 while (camera.isOpened()):
 
     # read frame from the camera
-    _, fullFrame = camera.read()
+    ret, fullFrame = camera.read()
 
-    # resize the frame
-    frame = imutils.resize(fullFrame, width=videoSize[0])
+    if ret:
+        # resize the frame
+        frame = imutils.resize(fullFrame, width=videoSize[0])
 
-   
-    if CROP: frame = frame[cropShift[1]:cropShift[1]+canvasSize[1]+MARGIN*4, cropShift[0]:cropShift[0]+canvasSize[0]+MARGIN*4]
+       
+        if CROP: frame = frame[cropShift[1]:cropShift[1]+canvasSize[1]+MARGIN*4, cropShift[0]:cropShift[0]+canvasSize[0]+MARGIN*4]
 
-    # transform
-    if (len(perspectiveCorners) > 3):
-        rows,cols,ch = frame.shape
-        pts1 = np.float32(perspectiveCorners[:4])
-        pts2 = np.float32([[0,0],[rows/RES[1]*RES[0],0],[rows/RES[1]*RES[0],rows],[0,rows]])
-        M = cv2.getPerspectiveTransform(pts1,pts2)
-        frame = cv2.warpPerspective(frame,M,(cols,rows))
- 
+        # transform
+        if (len(perspectiveCorners) > 3):
+            rows,cols,ch = frame.shape
+            pts1 = np.float32(perspectiveCorners[:4])
+            pts2 = np.float32([[0,0],[rows/RES[1]*RES[0],0],[rows/RES[1]*RES[0],rows],[0,rows]])
+            M = cv2.getPerspectiveTransform(pts1,pts2)
+            frame = cv2.warpPerspective(frame,M,(cols,rows))
+     
 
-    # virtual bot simulation
-    if BOTLESS:
+        # virtual bot simulation
+        if BOTLESS:
 
-        markers[0] = virtualMarkers[0]
-        markers[1] = virtualMarkers[1]
-        markers[2] = virtualMarkers[2]
-        markers[3] = virtualMarkers[3]
-        rradius = 12
-        bradius = 12
-        rcenter = (markers[0], markers[1])
-        bcenter = (markers[2], markers[3])
-        x = (markers[2]+markers[0])/2
-        y = (markers[3]+markers[1])/2
+            markers[0] = virtualMarkers[0]
+            markers[1] = virtualMarkers[1]
+            markers[2] = virtualMarkers[2]
+            markers[3] = virtualMarkers[3]
+            rradius = 12
+            bradius = 12
+            rcenter = (markers[0], markers[1])
+            bcenter = (markers[2], markers[3])
+            x = (markers[2]+markers[0])/2
+            y = (markers[3]+markers[1])/2
 
-        # add the current virtual robot coordinate to trace
-        trace.append((x,y))
+            # add the current virtual robot coordinate to trace
+            trace.append((x,y))
 
-        # draw the trace on screen
-        if len(trace) > 1:
-            for i in range(len(trace)-1):
-                # draw line from every two points
-                cv2.line(frame, trace[i], trace[i+1], BLACK, 1)
+            # draw the trace on screen
+            if len(trace) > 1:
+                for i in range(len(trace)-1):
+                    # draw line from every two points
+                    cv2.line(frame, trace[i], trace[i+1], BLACK, 1)
 
-        # draw the robot
-        cv2.circle(frame, (int(x), int(y)), int((math.sqrt((markers[0]-markers[2])**2+(markers[1]-markers[3])**2)+rradius+bradius)/2+5), BLACK, -1)
-        cv2.circle(frame, (int(x), int(y)), int((math.sqrt((markers[0]-markers[2])**2+(markers[1]-markers[3])**2)+rradius+bradius)/2+5), WHITE, 1)
+            # draw the robot
+            cv2.circle(frame, (int(x), int(y)), int((math.sqrt((markers[0]-markers[2])**2+(markers[1]-markers[3])**2)+rradius+bradius)/2+5), BLACK, -1)
+            cv2.circle(frame, (int(x), int(y)), int((math.sqrt((markers[0]-markers[2])**2+(markers[1]-markers[3])**2)+rradius+bradius)/2+5), WHITE, 1)
 
-        # draw the red marker
-        cv2.circle(frame, rcenter, int(rradius), RED, -1)
-        cv2.circle(frame, (int(markers[0]), int(markers[1])), int(rradius), WHITE, 1)
-        cv2.putText(frame, '3', rcenter, 0, 0.4, WHITE)
+            # draw the red marker
+            cv2.circle(frame, rcenter, int(rradius), RED, -1)
+            cv2.circle(frame, (int(markers[0]), int(markers[1])), int(rradius), WHITE, 1)
+            cv2.putText(frame, '3', rcenter, 0, 0.4, WHITE)
 
-        # draw the blue marker
-        cv2.circle(frame, bcenter, int(bradius), BLUE, -1)
-        cv2.circle(frame, (int(markers[2]), int(markers[3])), int(bradius), WHITE, 1)
-        cv2.putText(frame, '1', bcenter, 0, 0.4, WHITE)
+            # draw the blue marker
+            cv2.circle(frame, bcenter, int(bradius), BLUE, -1)
+            cv2.circle(frame, (int(markers[2]), int(markers[3])), int(bradius), WHITE, 1)
+            cv2.putText(frame, '1', bcenter, 0, 0.4, WHITE)
 
-    else:
-        # blur the frame, and convert it to the HSV color space
-        blurred = cv2.GaussianBlur(frame, (11, 11), 0)
-        hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
+        else:
+            # blur the frame, and convert it to the HSV color space
+            blurred = cv2.GaussianBlur(frame, (11, 11), 0)
+            hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
 
-        # construct a mask for the color "red" and "blue", then
-        # perform a series of dilations and erosions to remove any
-        # small blobs left in the mask
-        rmask = cv2.inRange(hsv, rlower, rupper)
-        rmask = cv2.erode(rmask, None, iterations=2)
-        rmask = cv2.dilate(rmask, None, iterations=2)
-        bmask = cv2.inRange(hsv, blower, bupper)
-        bmask = cv2.erode(bmask, None, iterations=2)
-        bmask = cv2.dilate(bmask, None, iterations=2)
-        
-        # find contours in the mask and initialize the current
-        # (x, y) center of the ball
-        rcnts = cv2.findContours(rmask.copy(), cv2.RETR_EXTERNAL,
-            cv2.CHAIN_APPROX_SIMPLE)[-2]
-        rcenter = None
-        bcnts = cv2.findContours(bmask.copy(), cv2.RETR_EXTERNAL,
-            cv2.CHAIN_APPROX_SIMPLE)[-2]
-        bcenter = None
+            # construct a mask for the color "red" and "blue", then
+            # perform a series of dilations and erosions to remove any
+            # small blobs left in the mask
+            rmask = cv2.inRange(hsv, rlower, rupper)
+            rmask = cv2.erode(rmask, None, iterations=2)
+            rmask = cv2.dilate(rmask, None, iterations=2)
+            bmask = cv2.inRange(hsv, blower, bupper)
+            bmask = cv2.erode(bmask, None, iterations=2)
+            bmask = cv2.dilate(bmask, None, iterations=2)
+            
+            # find contours in the mask and initialize the current
+            # (x, y) center of the ball
+            rcnts = cv2.findContours(rmask.copy(), cv2.RETR_EXTERNAL,
+                cv2.CHAIN_APPROX_SIMPLE)[-2]
+            rcenter = None
+            bcnts = cv2.findContours(bmask.copy(), cv2.RETR_EXTERNAL,
+                cv2.CHAIN_APPROX_SIMPLE)[-2]
+            bcenter = None
 
-        # only proceed if at least one contour was for both red and blue
-        if len(rcnts) > 0 and len(bcnts) > 0:
-            # find the largest contour in the mask, then use
-            # it to compute the minimum enclosing circle and
-            # centroid
-            rc = max(rcnts, key=cv2.contourArea)
-            ((markers[0], markers[1]), rradius) = cv2.minEnclosingCircle(rc)
-            bc = max(bcnts, key=cv2.contourArea)
-            ((markers[2], markers[3]), bradius) = cv2.minEnclosingCircle(bc)
-            # faulty markers if either radius is too large or distance between markers is too large
-            if rradius > 50 or bradius > 50 or math.hypot(markers[0]-markers[2], markers[1]-markers[3]) > 100:
+            # only proceed if at least one contour was for both red and blue
+            if len(rcnts) > 0 and len(bcnts) > 0:
+                # find the largest contour in the mask, then use
+                # it to compute the minimum enclosing circle and
+                # centroid
+                rc = max(rcnts, key=cv2.contourArea)
+                ((markers[0], markers[1]), rradius) = cv2.minEnclosingCircle(rc)
+                bc = max(bcnts, key=cv2.contourArea)
+                ((markers[2], markers[3]), bradius) = cv2.minEnclosingCircle(bc)
+                # faulty markers if either radius is too large or distance between markers is too large
+                if rradius > 50 or bradius > 50 or math.hypot(markers[0]-markers[2], markers[1]-markers[3]) > 100:
+                    markers = [-1,-1,-1,-1]
+
+                if DEBUG:
+                    rM = cv2.moments(rc)
+                    rcenter = (int(rM["m10"] / rM["m00"]), int(rM["m01"] / rM["m00"]))
+
+                    # only proceed if the radius meets a minimum size
+                    if rradius > 0 and rradius < 50:
+                        #print rradius, rx, ry
+                        # draw the circle and centroid on the frame,
+                        cv2.circle(frame, rcenter, int(rradius), RED, -1)
+                        cv2.circle(frame, (int(markers[0]), int(markers[1])), int(rradius), WHITE, 1)
+                        #cv2.putText(frame, '3', rcenter, 0, 0.4, WHITE)
+
+                    bM = cv2.moments(bc)
+                    bcenter = (int(bM["m10"] / bM["m00"]), int(bM["m01"] / bM["m00"]))
+
+                    # only proceed if the radius meets a minimum size
+                    if bradius > 0 and bradius < 50:
+                        #print bradius, bx, by
+                        # draw the circle and centroid on the frame,
+                        cv2.circle(frame, bcenter, int(bradius), BLUE, -1)
+                        cv2.circle(frame, (int(markers[2]), int(markers[3])), int(bradius), WHITE, 1)
+                        #cv2.putText(frame, '1', bcenter, 0, 0.4, WHITE)
+            # if either color is not detected
+            else:
                 markers = [-1,-1,-1,-1]
 
-            if DEBUG:
-                rM = cv2.moments(rc)
-                rcenter = (int(rM["m10"] / rM["m00"]), int(rM["m01"] / rM["m00"]))
+        # the grid is drawn at the end so as not to affect the tracking
+        if DEBUG:
+            for c in range(RES[0]):
+                cv2.line(frame, (route[c][0]+canvasShift[0], route[0][1]+canvasShift[1]), (route[c][0]+canvasShift[0], route[-1][1]+canvasShift[1]), WHITE, 1)
+            for r in range(RES[1]):
+                cv2.line(frame, (route[0][0]+canvasShift[0], route[r*RES[0]][1]+canvasShift[1]), (route[RES[0]-1][0]+canvasShift[0], route[r*RES[0]][1]+canvasShift[1]), WHITE, 1)
 
-                # only proceed if the radius meets a minimum size
-                if rradius > 0 and rradius < 50:
-                    #print rradius, rx, ry
-                    # draw the circle and centroid on the frame,
-                    cv2.circle(frame, rcenter, int(rradius), RED, -1)
-                    cv2.circle(frame, (int(markers[0]), int(markers[1])), int(rradius), WHITE, 1)
-                    #cv2.putText(frame, '3', rcenter, 0, 0.4, WHITE)
-
-                bM = cv2.moments(bc)
-                bcenter = (int(bM["m10"] / bM["m00"]), int(bM["m01"] / bM["m00"]))
-
-                # only proceed if the radius meets a minimum size
-                if bradius > 0 and bradius < 50:
-                    #print bradius, bx, by
-                    # draw the circle and centroid on the frame,
-                    cv2.circle(frame, bcenter, int(bradius), BLUE, -1)
-                    cv2.circle(frame, (int(markers[2]), int(markers[3])), int(bradius), WHITE, 1)
-                    #cv2.putText(frame, '1', bcenter, 0, 0.4, WHITE)
-        # if either color is not detected
-        else:
+        if isPaused:
             markers = [-1,-1,-1,-1]
 
-    # the grid is drawn at the end so as not to affect the tracking
-    if DEBUG:
-        for c in range(RES[0]):
-            cv2.line(frame, (route[c][0]+canvasShift[0], route[0][1]+canvasShift[1]), (route[c][0]+canvasShift[0], route[-1][1]+canvasShift[1]), WHITE, 1)
-        for r in range(RES[1]):
-            cv2.line(frame, (route[0][0]+canvasShift[0], route[r*RES[0]][1]+canvasShift[1]), (route[RES[0]-1][0]+canvasShift[0], route[r*RES[0]][1]+canvasShift[1]), WHITE, 1)
-
-    if isPaused:
-        markers = [-1,-1,-1,-1]
+    else:
+            markers = [-1,-1,-1,-1]
 
     # go to the dstx and dstb
     #goTo(rx, ry, bx, by, route[currIndex[0]][0], route[currIndex[0]][1], currIndex)
