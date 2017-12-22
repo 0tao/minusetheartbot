@@ -66,10 +66,10 @@ RED     = (0, 0, 255)
 # the balls/markers in the HSV color space
 # so far, this requires manual calibration depending on the light condition
 # (0-179, 0-255, 0-255)
-blower = (92, 100, 0)
+blower = (92, 0, 0)
 bupper = (112, 255, 255)
-rlower = (160, 100, 100)
-rupper = (179, 255, 200)
+rlower = (160, 0, 0)
+rupper = (179, 255, 255)
 
 # video width and height
 videoSize = (1600, 900)
