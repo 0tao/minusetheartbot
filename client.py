@@ -98,10 +98,11 @@ if IMAGE:
     img = cv2.imread(IMAGE, cv2.IMREAD_GRAYSCALE)
     # initializing mouse click callback
     h, w = img.shape
-    RES = (args.resolution*w/h, args.resolution) # for now, assume it's square
+    RES = (args.resolution*w/h, args.resolution)
     img = cv2.resize(img, RES, interpolation = cv2.INTER_AREA)
     cv2.imwrite(OUTPATH+IMAGE+'_converted.png', img); 
 
+# write out the log
 log = open(OUTPATH+"log.txt", "w")
 log.write(str(args))
 log.close()
